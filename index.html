@@ -516,26 +516,49 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-        function runQueueLoop() {
+                function runQueueLoop() {
             const route = routes[currentRouteIndex];
-            let items = [];
+            
+            // 1. 建立下一站資訊（獨立，不參與跑馬燈串接）
+            let stationMsg = '';
             if(currentStationIndex < route.stations.length) {
-                items.push(`下一站：${route.stations[currentStationIndex].name}`);
+                stationMsg = `下一站：${route.stations[currentStationIndex].name}`;
             } else {
-                items.push('本班車已行駛至終點站');
+                stationMsg = '本班車已行駛至終點站';
             }
-            broadcasts.forEach(b => items.push(b));
 
-            let qIdx = 0;
-            function showNext() {
+            // 2. 將所有政令廣播用 8 個全形空白串成一長串
+            let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
+
+            let isBroadcastTurn = false;
+
+            function showNextMessage() {
                 const el = document.getElementById('activeMarqueeText');
-                if(!el.classList.contains('arriving')) {
-                    el.textContent = items[qIdx];
+                if (el.classList.contains('arriving')) return; // 若正在即將進站，暫不切換
+
+                if (!isBroadcastTurn) {
+                    // 顯示下一站（短字串：移除跑馬燈動畫級別，讓它靜態置中或靠左完整顯示）
+                    el.style.animation = 'none';
+                    el.style.paddingLeft = '0';
+                    el.textContent = stationMsg;
+                    isBroadcastTurn = true;
+                    // 短字串停留 4 秒後切換到政令廣播
+                    marqueeTimer = setTimeout(showNextMessage, 4000);
+                } else {
+                    // 顯示政令廣播長字串（套用捲動動畫，從最左邊開始）
+                    el.textContent = broadcastMsg;
+                    el.style.paddingLeft = '100%'; // 從最右側進場或左側開始
+                    el.style.animation = 'none';
+                    void el.offsetWidth; // 觸發 DOM 重繪以重新套用動畫
+                    el.style.animation = 'marqueeScroll 18s linear infinite';
+                    isBroadcastTurn = false;
+                    // 政令廣播跑一輪（或停留一段時間後）切回下一站
+                    marqueeTimer = setTimeout(showNextMessage, 15000);
                 }
-                qIdx = (qIdx + 1) % items.length;
-                marqueeTimer = setTimeout(showNext, 6000);
             }
-            showNext();
+            showNextMessage();
+
+
         }
     </script>
 </body>
