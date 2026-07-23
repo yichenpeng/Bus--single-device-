@@ -150,17 +150,21 @@
         <button class="btn-primary" onclick="saveCurrentRoute()" style="background-color: #28a745; margin-top: 20px;">💾 儲存整條路線</button>
     </div>
 
-    <!-- 頁面 2：政令廣播設定 -->
-    <div class="page" id="broadcast-page">
-        <div class="back-bar">
-            <button class="back-btn" onclick="closePage('broadcast-page')">⬅️ 返回選單</button>
-            <h2>政令廣播內容</h2>
-            <div></div>
-        </div>
-        <input type="text" id="broadcastInput" placeholder="輸入廣播內容（例如：請配合防疫佩戴口罩）">
-        <button class="btn-primary" onclick="addBroadcast()">新增並儲存廣播</button>
-        <ul id="broadcastListUI" style="margin-top: 15px;"></ul>
+<!-- 頁面 2：政令廣播設定 -->
+<div class="page" id="broadcast-page">
+    <div class="back-bar">
+        <button class="back-btn" onclick="closePage('broadcast-page')">⬅️ 返回選單</button>
+        <h2>政令廣播內容</h2>
+        <div></div>
     </div>
+    <div class="route-name-container">
+        <label for="broadcastInput">廣播內容：</label>
+        <input type="text" id="broadcastInput" class="short-input" placeholder="例如：請配合防疫佩戴口罩">
+    </div>
+    <button class="btn-primary" onclick="addBroadcast()">新增並儲存廣播</button>
+    <ul id="broadcastListUI" style="margin-top: 15px;"></ul>
+</div>
+
 
     <!-- 頁面 3：語音參數調節 -->
     <div class="page" id="voice-page">
