@@ -62,28 +62,32 @@
 
         .btn-primary { width: 100%; margin-top: 10px; }
         .btn-danger { background-color: #dc3545; padding: 6px 12px; font-size: 14px; }
-.short-input { flex: none; width: 250px; }
+        .short-input { flex: none; width: 250px; }
 
         /* 跑馬燈執行畫面 */
         #marquee-page { background: #000; padding: 0; justify-content: center; align-items: center; }
         .marquee-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative; }
         .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; box-sizing: border-box; position: relative; }
-.marquee-text { 
-    display: inline-block; 
-    padding-left: 100%; 
-    font-size: 50vh; /* 字體高度佔裝置的一半 */
-    line-height: 1; /* 確保行高貼合字體大小，避免上下留白過多 */
-    font-weight: bold; 
-    color: #ffaa00; 
-    white-space: nowrap; 
-    text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); 
-    animation: marqueeScroll 18s linear infinite; 
-}
+        .marquee-text { 
+            display: inline-block; 
+            padding-left: 0; 
+            font-size: 50vh; 
+            line-height: 1; 
+            font-weight: bold; 
+            color: #ffaa00; 
+            white-space: nowrap; 
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); 
+        }
 
-@keyframes marqueeScroll {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(-100%, 0); }
-}
+        .marquee-text.scrolling {
+            padding-left: 100%; 
+            animation: marqueeScroll 18s linear infinite; 
+        }
+
+        @keyframes marqueeScroll {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
 
         .marquee-text.arriving { color: #ff3300; text-shadow: 0 0 25px rgba(255, 51, 0, 0.9); animation: blink 0.6s infinite alternate; }
         @keyframes blink { from { opacity: 1; } to { opacity: 0.35; } }
@@ -130,7 +134,6 @@
             <div></div>
         </div>
         
-        <!-- 調整後的大小適中路線名稱輸入框 -->
         <div class="route-name-container">
             <label for="newRouteName">路線名稱：</label>
             <input type="text" id="newRouteName" placeholder="例如: 6767路打狗客運">
@@ -152,23 +155,22 @@
         <button class="btn-primary" onclick="saveCurrentRoute()" style="background-color: #28a745; margin-top: 20px;">💾 儲存整條路線</button>
     </div>
 
-<!-- 頁面 2：政令廣播設定 -->
-<div class="page" id="broadcast-page">
-    <div class="back-bar">
-        <button class="back-btn" onclick="closePage('broadcast-page')">⬅️ 返回選單</button>
-        <h2>政令廣播內容</h2>
-        <div></div>
+    <!-- 頁面 2：政令廣播設定 -->
+    <div class="page" id="broadcast-page">
+        <div class="back-bar">
+            <button class="back-btn" onclick="closePage('broadcast-page')">⬅️ 返回選單</button>
+            <h2>政令廣播內容</h2>
+            <div></div>
+        </div>
+        <div class="route-name-container">
+            <label for="broadcastInput">廣播內容：</label>
+            <input type="text" id="broadcastInput" class="short-input" placeholder="例如：請配合防疫佩戴口罩">
+        </div>
+        <button class="btn-primary" onclick="addBroadcast()">新增並儲存廣播</button>
+        <ul id="broadcastListUI" style="margin-top: 15px;"></ul>
     </div>
-    <div class="route-name-container">
-        <label for="broadcastInput">廣播內容：</label>
-        <input type="text" id="broadcastInput" class="short-input" placeholder="例如：請配合防疫佩戴口罩">
-    </div>
-    <button class="btn-primary" onclick="addBroadcast()">新增並儲存廣播</button>
-    <ul id="broadcastListUI" style="margin-top: 15px;"></ul>
-</div>
 
-
-            <!-- 頁面 3：語音參數調節 -->
+    <!-- 頁面 3：語音參數調節 -->
     <div class="page" id="voice-page">
         <div class="back-bar">
             <button class="back-btn" onclick="closePage('voice-page')">⬅️ 返回選單</button>
@@ -185,11 +187,9 @@
         <label style="margin-top: 15px;">音量 (Volume: <span id="volVal">1.0</span>)</label>
         <input type="range" id="speechVol" min="0.0" max="1.0" step="0.1" value="1.0" oninput="updateVoiceSettings()">
         
-        <!-- 單一預聽按鈕 -->
+        <!-- 單一預聽按鈕（已同步最新拉桿數值） -->
         <button class="btn-primary" onclick="testVoice()" style="background-color: #007bff; margin-top: 25px;">🔊 預聽當前效果</button>
     </div>
-
-
 
     <!-- 頁面 4：跑馬燈與 GPS 執行頁面 -->
     <div class="page" id="marquee-page" ondblclick="returnToMenuFromMarquee()">
@@ -226,7 +226,6 @@
         }
         function closePage(pageId) { document.getElementById(pageId).classList.remove('active'); }
 
-        // ---- 初始化拖曳排序功能 (Sortable.js) ----
         document.addEventListener('DOMContentLoaded', () => {
             const stationListEl = document.getElementById('stationList');
             if(stationListEl) {
@@ -261,7 +260,6 @@
             renderEditingStations();
         }
 
-        // ---- 查詢座標並限制「找不到座標不得加入」 ----
         document.getElementById('addStationBtn').addEventListener('click', async () => {
             const nickname = document.getElementById('stationNickname').value.trim();
             const address = document.getElementById('stationAddress').value.trim();
@@ -281,7 +279,7 @@
                 if (!data || data.length === 0) {
                     searchStatus.textContent = `❌ 查無此地址的經緯度，無法新增站點！`;
                     alert(`查無此地址「${address}」的地理座標，請確認地址是否正確或重新輸入！`);
-                    return; // 找不到座標直接阻擋，不加入清單
+                    return;
                 }
 
                 const lat = parseFloat(data[0].lat);
@@ -448,19 +446,24 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        function testVoice() { speak('歡迎搭乘打狗客運，語音測試正常'); }
+        function testVoice() { 
+            updateVoiceSettings(); // 確保抓取當前拉桿數值
+            speak('這是目前語音設定的預聽測試'); 
+        }
 
         function startMarqueeMode() {
             if(routes.length === 0 || !routes[currentRouteIndex] || routes[currentRouteIndex].stations.length === 0) {
                 alert('請先設定好路線與至少一個站點！'); return;
             }
             openPage('marquee-page');
-            currentStationIndex = 0; // 直接由起點開始由 GPS 判斷
+            currentStationIndex = 0;
             
             const route = routes[currentRouteIndex];
             const welcomeText = `歡迎搭乘${route.name}。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
             
             const el = document.getElementById('activeMarqueeText');
+            el.classList.remove('scrolling');
+            el.style.animation = 'none';
             el.textContent = `歡迎搭乘${route.name} 本車由${route.start}開往${route.end} 祝您旅途愉快一路平安`;
             
             speak(welcomeText, () => {
@@ -522,55 +525,51 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
-                function runQueueLoop() {
+        function runQueueLoop() {
             const route = routes[currentRouteIndex];
-            
-            // 1. 建立下一站資訊（獨立，不參與跑馬燈串接）
-            let stationMsg = '';
-            if(currentStationIndex < route.stations.length) {
-                stationMsg = `下一站：${route.stations[currentStationIndex].name}`;
-            } else {
-                stationMsg = '本班車已行駛至終點站';
-            }
-
-            // 2. 將所有政令廣播用 8 個全形空白串成一長串
-            let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
-
             let isBroadcastTurn = false;
-                function testVoice() {
-            updateVoiceSettings(); // 確保即時同步目前拉桿數值
-            speak('這是目前語音設定的預聽測試');
-        }
-
-        }
 
             function showNextMessage() {
                 const el = document.getElementById('activeMarqueeText');
-                if (el.classList.contains('arriving')) return; // 若正在即將進站，暫不切換
+                if (el.classList.contains('arriving')) {
+                    marqueeTimer = setTimeout(showNextMessage, 1000);
+                    return;
+                }
 
                 if (!isBroadcastTurn) {
-                    // 顯示下一站（短字串：移除跑馬燈動畫級別，讓它靜態置中或靠左完整顯示）
+                    let stationMsg = '';
+                    if(currentStationIndex < route.stations.length) {
+                        stationMsg = `下一站：${route.stations[currentStationIndex].name}`;
+                    } else {
+                        stationMsg = '本班車已行駛至終點站';
+                    }
+
+                    el.classList.remove('scrolling');
                     el.style.animation = 'none';
-                    el.style.paddingLeft = '0';
                     el.textContent = stationMsg;
                     isBroadcastTurn = true;
-                    // 短字串停留 4 秒後切換到政令廣播
+                    
                     marqueeTimer = setTimeout(showNextMessage, 4000);
                 } else {
-                    // 顯示政令廣播長字串（套用捲動動畫，從最左邊開始）
+                    let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
+                    
                     el.textContent = broadcastMsg;
-                    el.style.paddingLeft = '100%'; // 從最右側進場或左側開始
+                    el.classList.remove('scrolling');
                     el.style.animation = 'none';
-                    void el.offsetWidth; // 觸發 DOM 重繪以重新套用動畫
-                    el.style.animation = 'marqueeScroll 18s linear infinite';
+                    void el.offsetWidth; // 觸發重繪
+
+                    setTimeout(() => {
+                        if (!el.classList.contains('arriving')) {
+                            el.classList.add('scrolling');
+                        }
+                    }, 3000);
+
                     isBroadcastTurn = false;
-                    // 政令廣播跑一輪（或停留一段時間後）切回下一站
-                    marqueeTimer = setTimeout(showNextMessage, 15000);
+                    
+                    marqueeTimer = setTimeout(showNextMessage, 18000);
                 }
             }
             showNextMessage();
-
-
         }
     </script>
 </body>
