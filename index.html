@@ -538,6 +538,20 @@
             let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
 
             let isBroadcastTurn = false;
+        function testRate() {
+            updateVoiceSettings();
+            speak('這是目前語速的預聽測試');
+        }
+
+        function testPitch() {
+            updateVoiceSettings();
+            speak('這是目前音高的預聽測試');
+        }
+
+        function testVolume() {
+            updateVoiceSettings();
+            speak('這是目前音量的預聽測試');
+        }
 
             function showNextMessage() {
                 const el = document.getElementById('activeMarqueeText');
