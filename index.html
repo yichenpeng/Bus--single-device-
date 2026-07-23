@@ -40,6 +40,11 @@
         .input-row { display: flex; gap: 10px; }
         input, select { flex: 1; padding: 10px; font-size: 16px; background: #111; color: #fff; border: 1px solid #444; border-radius: 4px; }
         
+        /* 縮小路線名稱輸入框 */
+        .route-name-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #222; padding: 12px; border-radius: 6px; border: 1px solid #444; }
+        .route-name-container label { font-size: 15px; color: #ffaa00; white-space: nowrap; font-weight: bold; }
+        .route-name-container input { flex: none; width: 250px; }
+
         button { padding: 10px 15px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #218838; }
 
@@ -47,15 +52,12 @@
         .drag-handle { cursor: ns-resize; color: #888; font-size: 20px; padding: 0 5px; user-select: none; }
         
         li { background: #222; border: 1px solid #444; margin-bottom: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; }
-        li.active-station { border: 2px solid #ffaa00; background-color: #2a2510; }
-        li.sortable-ghost { opacity: 0.3; background: #444; }
-        li.sortable-chosen { background: #333; }
+        .sortable-ghost { opacity: 0.3; background: #444; }
+        .sortable-chosen { background: #333; }
 
         .station-info { font-size: 13px; color: #aaa; margin-top: 4px; }
         .actions { display: flex; gap: 5px; }
-        .actions button { background-color: #555; padding: 5px 10px; font-size: 13px; }
-        .actions button.set-target-btn { background-color: #007bff; }
-        .actions button.delete-btn { background-color: #dc3545; }
+        .actions button { background-color: #dc3545; padding: 5px 10px; font-size: 13px; }
         .search-status { font-size: 13px; color: #ffaa00; margin-top: 5px; }
 
         .btn-primary { width: 100%; margin-top: 10px; }
@@ -111,7 +113,11 @@
             <div></div>
         </div>
         
-        <input type="text" id="newRouteName" placeholder="請輸入路線名稱 (例如: 6767路打狗客運)" style="margin-bottom: 15px;">
+        <!-- 調整後的大小適中路線名稱輸入框 -->
+        <div class="route-name-container">
+            <label for="newRouteName">路線名稱：</label>
+            <input type="text" id="newRouteName" placeholder="例如: 6767路打狗客運">
+        </div>
 
         <div class="input-group">
             <h3 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 16px;">➕ 新增站點</h3>
@@ -119,11 +125,11 @@
                 <input type="text" id="stationNickname" placeholder="站名（例如：總公司）">
                 <input type="text" id="stationAddress" placeholder="真實地址（例如：台北市信義路五段7號）">
             </div>
-            <button id="addStationBtn">新增站點至清單</button>
+            <button id="addStationBtn">查詢座標並新增站點</button>
             <div id="searchStatus" class="search-status"></div>
         </div>
 
-        <h3 style="font-size: 16px; margin: 10px 0;">📋 站點清單（可按住 ☰ 上下拖曳排序，🎯 = 目前目標站）</h3>
+        <h3 style="font-size: 16px; margin: 10px 0;">📋 站點清單（可按住 ☰ 上下拖曳排序）</h3>
         <ul id="stationList"></ul>
 
         <button class="btn-primary" onclick="saveCurrentRoute()" style="background-color: #28a745; margin-top: 20px;">💾 儲存整條路線</button>
@@ -177,8 +183,6 @@
         let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0, volume: 1.0 };
         
         let editingStations = [];
-        let editingTargetIndex = 0;
-
         let watchId = null;
         let currentStationIndex = 0;
         let marqueeTimer = null;
@@ -214,14 +218,6 @@
 
                         const movedItem = editingStations.splice(oldIndex, 1)[0];
                         editingStations.splice(newIndex, 0, movedItem);
-
-                        if (editingTargetIndex === oldIndex) {
-                            editingTargetIndex = newIndex;
-                        } else if (oldIndex < editingTargetIndex && newIndex >= editingTargetIndex) {
-                            editingTargetIndex--;
-                        } else if (oldIndex > editingTargetIndex && newIndex <= editingTargetIndex) {
-                            editingTargetIndex++;
-                        }
                         renderEditingStations();
                     }
                 });
@@ -233,16 +229,14 @@
                 const r = routes[currentRouteIndex];
                 document.getElementById('newRouteName').value = r.name;
                 editingStations = JSON.parse(JSON.stringify(r.stations || []));
-                editingTargetIndex = r.targetIndex || 0;
             } else {
                 document.getElementById('newRouteName').value = '';
                 editingStations = [];
-                editingTargetIndex = 0;
             }
             renderEditingStations();
         }
 
-        // ---- 逐筆新增站點並即時查詢經緯度 ----
+        // ---- 查詢座標並限制「找不到座標不得加入」 ----
         document.getElementById('addStationBtn').addEventListener('click', async () => {
             const nickname = document.getElementById('stationNickname').value.trim();
             const address = document.getElementById('stationAddress').value.trim();
@@ -260,22 +254,23 @@
                 const data = await response.json();
 
                 if (!data || data.length === 0) {
-                    searchStatus.textContent = `❌ 查無此地址的經緯度，將以預設儲存！`;
-                    editingStations.push({ name: nickname, address: address, lat: 0, lon: 0 });
-                } else {
-                    const lat = parseFloat(data[0].lat);
-                    const lon = parseFloat(data[0].lon);
-                    searchStatus.textContent = `✅ 成功取得地理位置座標！`;
-                    editingStations.push({ name: nickname, address: address, lat: lat, lon: lon });
+                    searchStatus.textContent = `❌ 查無此地址的經緯度，無法新增站點！`;
+                    alert(`查無此地址「${address}」的地理座標，請確認地址是否正確或重新輸入！`);
+                    return; // 找不到座標直接阻擋，不加入清單
                 }
+
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                searchStatus.textContent = `✅ 成功取得地理位置座標！`;
+                
+                editingStations.push({ name: nickname, address: address, lat: lat, lon: lon });
 
                 document.getElementById('stationNickname').value = '';
                 document.getElementById('stationAddress').value = '';
                 renderEditingStations();
             } catch (error) {
-                searchStatus.textContent = `❌ 地圖服務連線失敗，已直接加入站點。`;
-                editingStations.push({ name: nickname, address: address, lat: 0, lon: 0 });
-                renderEditingStations();
+                searchStatus.textContent = `❌ 地圖服務連線失敗，無法取得座標。`;
+                alert('地圖服務連線失敗，請檢查網路後重試。');
             }
         });
 
@@ -290,18 +285,15 @@
 
             editingStations.forEach((s, idx) => {
                 const li = document.createElement('li');
-                if (idx === editingTargetIndex) li.classList.add('active-station');
-                
-                const coordText = s.lat ? `(座標: ${s.lat.toFixed(2)}, ${s.lon.toFixed(2)})` : '(無座標)';
+                const coordText = `(座標: ${s.lat.toFixed(2)}, ${s.lon.toFixed(2)})`;
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <span class="drag-handle">☰</span>
                         <div style="flex: 1;">
-                            <strong>${idx + 1}. ${s.name}</strong> ${idx === editingTargetIndex ? '🎯(目標站)' : ''}
+                            <strong>${idx + 1}. ${s.name}</strong>
                             <div class="station-info">${s.address || ''} ${coordText}</div>
                         </div>
                         <div class="actions">
-                            <button class="set-target-btn" onclick="setEditingTarget(${idx})">設為目標</button>
                             <button class="delete-btn" onclick="removeEditingStation(${idx})">刪除</button>
                         </div>
                     </div>
@@ -312,14 +304,6 @@
 
         window.removeEditingStation = function(idx) {
             editingStations.splice(idx, 1);
-            if (editingTargetIndex >= editingStations.length && editingStations.length > 0) {
-                editingTargetIndex = editingStations.length - 1;
-            }
-            renderEditingStations();
-        }
-
-        window.setEditingTarget = function(idx) {
-            editingTargetIndex = idx;
             renderEditingStations();
         }
 
@@ -332,8 +316,7 @@
                 name: name,
                 start: editingStations[0].name,
                 end: editingStations[editingStations.length - 1].name,
-                stations: editingStations,
-                targetIndex: editingTargetIndex
+                stations: editingStations
             };
 
             if(routes[currentRouteIndex] && routes[currentRouteIndex].name === name) {
@@ -447,7 +430,7 @@
                 alert('請先設定好路線與至少一個站點！'); return;
             }
             openPage('marquee-page');
-            currentStationIndex = routes[currentRouteIndex].targetIndex || 0;
+            currentStationIndex = 0; // 直接由起點開始由 GPS 判斷
             
             const route = routes[currentRouteIndex];
             const welcomeText = `歡迎搭乘${route.name}。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
@@ -486,8 +469,6 @@
                 return;
             }
             const target = route.stations[currentStationIndex];
-            if(target.lat === 0 && target.lon === 0) return;
-
             const dist = getDistanceFromLatLonInMeters(lat, lon, target.lat, target.lon);
             const el = document.getElementById('activeMarqueeText');
             
