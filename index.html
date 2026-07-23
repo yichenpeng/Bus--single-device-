@@ -35,11 +35,28 @@
         .back-btn { background: #444; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; }
 
         /* 輸入與清單 */
-        input, select { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; }
+        input, select, textarea { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; }
+        textarea { height: 100px; resize: vertical; }
         ul { list-style: none; padding: 0; margin: 0; }
         li { background: #222; border: 1px solid #444; margin-bottom: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; }
         .btn-primary { background: #28a745; color: #fff; border: none; padding: 12px; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; }
         .btn-danger { background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+
+        /* 跑馬燈特效樣式 */
+        .marquee-container {
+            overflow: hidden;
+            white-space: nowrap;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .marquee-text-scroll {
+            display: inline-block;
+            animation: marquee 10s linear infinite;
+        }
+        @keyframes marquee {
+            0%   { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
 
         /* 跑馬燈執行畫面 */
         #marquee-page {
@@ -68,30 +85,43 @@
     <!-- 主選單 -->
     <div class="menu-container" id="main-menu">
         <h1>🚌 公車智慧播報系統</h1>
-        <button class="menu-btn" onclick="openPage('route-page')">1. 選擇或新建路線</button>
+        <button class="menu-btn" onclick="openPage('route-menu-page')">1. 路線管理 (選擇/新增)</button>
         <button class="menu-btn" onclick="openPage('broadcast-page')">2. 選擇或新建政令廣播</button>
         <button class="menu-btn" onclick="openPage('voice-page')">3. 語音參數調節</button>
         <button class="menu-btn" onclick="startMarqueeMode()" style="background: #007bff;">4. 執行跑馬燈與自動報站</button>
     </div>
 
-    <!-- 頁面 1：路線設定 -->
-    <div class="page" id="route-page">
+    <!-- 路線管理主選單 -->
+    <div class="page" id="route-menu-page">
         <div class="back-bar">
-            <button class="back-btn" onclick="closePage('route-page')">⬅️ 返回選單</button>
+            <button class="back-btn" onclick="closePage('route-menu-page')">⬅️ 返回選單</button>
             <h2>路線管理</h2>
             <div></div>
         </div>
-        <select id="routeSelect" onchange="loadSelectedRoute()"></select>
-        <input type="text" id="routeNameInput" placeholder="新路線名稱（例如：6767 路線打狗客運）">
-        <input type="text" id="routeStartInput" placeholder="起站（例如：台北車站）">
-        <input type="text" id="routeEndInput" placeholder="終點站（例如：高雄車站）">
-        <button class="btn-primary" onclick="saveRoute()" style="margin-bottom: 20px;">儲存新路線</button>
-        
-        <h3>站點清單 (需包含地址供GPS定位)</h3>
-        <input type="text" id="stationNameInput" placeholder="站名（例如：總公司）">
-        <input type="text" id="stationAddrInput" placeholder="真實地址（例如：台北市信義路五段7號）">
-        <button class="btn-primary" onclick="addStationToCurrentRoute()">新增站點</button>
-        <ul id="stationListUI" style="margin-top: 15px;"></ul>
+        <button class="btn-primary" onclick="openPage('select-route-page'); renderRouteList();" style="margin-bottom: 15px;">📁 選擇 / 刪除現有路線</button>
+        <button class="btn-primary" onclick="openPage('create-route-page')" style="background: #007bff;">➕ 新增路線 (智慧起訖)</button>
+    </div>
+
+    <!-- 子頁面 1-1：選擇與刪除路線 -->
+    <div class="page" id="select-route-page">
+        <div class="back-bar">
+            <button class="back-btn" onclick="closePage('select-route-page')">⬅️ 返回</button>
+            <h2>選擇或刪除路線</h2>
+            <div></div>
+        </div>
+        <div id="route-list-container"></div>
+    </div>
+
+    <!-- 子頁面 1-2：智慧新增路線 -->
+    <div class="page" id="create-route-page">
+        <div class="back-bar">
+            <button class="back-btn" onclick="closePage('create-route-page')">⬅️ 返回</button>
+            <h2>新增路線</h2>
+            <div></div>
+        </div>
+        <input type="text" id="newRouteName" placeholder="請輸入路線名稱 (例如: 6767路打狗客運)">
+        <textarea id="newRouteStops" placeholder="請依序輸入所有停靠站，以逗號隔開&#10;例: 台北車站, 捷運台大醫院站, 公館, 高雄車站"></textarea>
+        <button class="btn-primary" onclick="saveSmartRoute()">儲存新路線</button>
     </div>
 
     <!-- 頁面 2：政令廣播設定 -->
@@ -128,14 +158,16 @@
     <!-- 頁面 4：跑馬燈與 GPS 執行頁面 -->
     <div class="page" id="marquee-page" ondblclick="returnToMenuFromMarquee()">
         <div class="marquee-wrapper">
-            <div class="marquee-text" id="activeMarqueeText">載入中...</div>
+            <div class="marquee-container">
+                <div class="marquee-text" id="activeMarqueeText">載入中...</div>
+            </div>
             <div class="gps-info-overlay" id="gpsInfoOverlay">GPS 偵測中... (雙擊畫面任意處返回選單)</div>
         </div>
     </div>
 
     <script>
         let routes = JSON.parse(localStorage.getItem('bus_routes')) || [];
-        let currentRouteIndex = localStorage.getItem('bus_current_route') || 0;
+        let currentRouteIndex = parseInt(localStorage.getItem('bus_current_route')) || 0;
         let broadcasts = JSON.parse(localStorage.getItem('bus_broadcasts')) || ['請隨身攜帶好個人隨身行李', '上下車請刷卡，祝您旅途愉快'];
         let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0, volume: 1.0 };
         
@@ -150,78 +182,97 @@
         document.getElementById('speechVol').value = voiceSettings.volume;
         document.getElementById('volVal').innerText = voiceSettings.volume;
 
-        function openPage(pageId) { document.getElementById(pageId).classList.add('active'); if(pageId === 'route-page') renderRouteUI(); if(pageId === 'broadcast-page') renderBroadcastUI(); }
+        function openPage(pageId) { document.getElementById(pageId).classList.add('active'); if(pageId === 'broadcast-page') renderBroadcastUI(); }
         function closePage(pageId) { document.getElementById(pageId).classList.remove('active'); }
 
-        function renderRouteUI() {
-            const select = document.getElementById('routeSelect');
-            select.innerHTML = '';
-            routes.forEach((r, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.textContent = r.name;
-                if(idx == currentRouteIndex) opt.selected = true;
-                select.appendChild(opt);
-            });
-            renderStations();
-        }
-
-        function saveRoute() {
-            const name = document.getElementById('routeNameInput').value.trim();
-            const start = document.getElementById('routeStartInput').value.trim();
-            const end = document.getElementById('routeEndInput').value.trim();
-            if(!name || !start || !end) { alert('請完整填寫路線名稱、起站與終點站！'); return; }
+        // 智慧儲存路線（自動抓取第一站為起點、最後一站為終點）
+        async function saveSmartRoute() {
+            const name = document.getElementById('newRouteName').value.trim();
+            const rawStops = document.getElementById('newRouteStops').value.trim();
             
-            routes.push({ name, start, end, stations: [] });
+            if(!name || !rawStops) { alert('請完整填寫路線名稱與停靠站！'); return; }
+
+            const stopNames = rawStops.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if(stopNames.length < 2) { alert('至少需要輸入起點與終點兩個站名（用逗號隔開）！'); return; }
+
+            alert('正在解析各站點真實地址經緯度，請稍候...');
+            let stations = [];
+            
+            for(let sName of stopNames) {
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(sName)}`);
+                    const data = await res.json();
+                    if(data && data.length > 0) {
+                        stations.push({ name: sName, lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
+                    } else {
+                        // 若查不到地址，給預設或用 0 代替避免中斷
+                        stations.push({ name: sName, lat: 0, lon: 0 });
+                    }
+                } catch(e) {
+                    stations.push({ name: sName, lat: 0, lon: 0 });
+                }
+            }
+
+            const newRoute = {
+                name: name,
+                start: stopNames[0],
+                end: stopNames[stopNames.length - 1],
+                stations: stations
+            };
+
+            routes.push(newRoute);
             currentRouteIndex = routes.length - 1;
             localStorage.setItem('bus_routes', JSON.stringify(routes));
             localStorage.setItem('bus_current_route', currentRouteIndex);
-            document.getElementById('routeNameInput').value = '';
-            document.getElementById('routeStartInput').value = '';
-            document.getElementById('routeEndInput').value = '';
-            renderRouteUI();
+
+            document.getElementById('newRouteName').value = '';
+            document.getElementById('newRouteStops').value = '';
+            alert('路線新增成功！');
+            closePage('create-route-page');
         }
 
-        function loadSelectedRoute() {
-            currentRouteIndex = document.getElementById('routeSelect').value;
-            localStorage.setItem('bus_current_route', currentRouteIndex);
-            renderStations();
-        }
+        // 渲染已建立的路線清單（附帶選擇與刪除）
+        function renderRouteList() {
+            const container = document.getElementById('route-list-container');
+            container.innerHTML = '';
+            if(routes.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888;">目前沒有已建立的路線，請先去新增！</p>';
+                return;
+            }
 
-        async function addStationToCurrentRoute() {
-            if(routes.length === 0) { alert('請先建立並選擇一條路線！'); return; }
-            const name = document.getElementById('stationNameInput').value.trim();
-            const addr = document.getElementById('stationAddrInput').value.trim();
-            if(!name || !addr) { alert('請輸入站名與地址！'); return; }
-
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr)}`);
-                const data = await res.json();
-                if(!data || data.length === 0) { alert('找不到此地址的經緯度'); return; }
-                
-                routes[currentRouteIndex].stations.push({ name, addr, lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) });
-                localStorage.setItem('bus_routes', JSON.stringify(routes));
-                document.getElementById('stationNameInput').value = '';
-                document.getElementById('stationAddrInput').value = '';
-                renderStations();
-            } catch(e) { alert('地址解析失敗'); }
-        }
-
-        function renderStations() {
-            const list = document.getElementById('stationListUI');
-            list.innerHTML = '';
-            if(routes.length === 0 || !routes[currentRouteIndex]) return;
-            routes[currentRouteIndex].stations.forEach((s, idx) => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span>${idx+1}. ${s.name} (${s.addr})</span> <button class="btn-danger" onclick="removeStation(${idx})">刪除</button>`;
-                list.appendChild(li);
+            routes.forEach((r, idx) => {
+                const div = document.createElement('div');
+                div.style = "display:flex; justify-content:space-between; align-items:center; background:#222; border:1px solid #444; padding:12px; margin-bottom:8px; border-radius:6px;";
+                const isSelected = (idx === currentRouteIndex) ? '🔥 [使用中]' : '';
+                div.innerHTML = `
+                    <div>
+                        <strong>${r.name}</strong> ${isSelected}<br>
+                        <small style="color:#aaa;">${r.start} ➔ ${r.end} (共 ${r.stations.length} 站)</small>
+                    </div>
+                    <div>
+                        <button class="btn-primary" style="padding:6px 10px; font-size:14px; width:auto; margin-right:5px;" onclick="selectRoute(${idx})">選擇</button>
+                        <button class="btn-danger" onclick="deleteRoute(${idx})">刪除</button>
+                    </div>
+                `;
+                container.appendChild(div);
             });
         }
 
-        function removeStation(idx) {
-            routes[currentRouteIndex].stations.splice(idx, 1);
-            localStorage.setItem('bus_routes', JSON.stringify(routes));
-            renderStations();
+        function selectRoute(idx) {
+            currentRouteIndex = idx;
+            localStorage.setItem('bus_current_route', currentRouteIndex);
+            alert(`已切換至路線：${routes[idx].name}`);
+            renderRouteList();
+        }
+
+        function deleteRoute(idx) {
+            if(confirm(`確定要刪除「${routes[idx].name}」這條路線嗎？`)) {
+                routes.splice(idx, 1);
+                if(currentRouteIndex >= routes.length) currentRouteIndex = Math.max(0, routes.length - 1);
+                localStorage.setItem('bus_routes', JSON.stringify(routes));
+                localStorage.setItem('bus_current_route', currentRouteIndex);
+                renderRouteList();
+            }
         }
 
         function renderBroadcastUI() {
@@ -281,9 +332,11 @@
             currentStationIndex = 0;
             
             const route = routes[currentRouteIndex];
-            const welcomeText = `歡迎搭乘6767路線打狗客運。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
+            const welcomeText = `歡迎搭乘${route.name}。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
             
-            document.getElementById('activeMarqueeText').textContent = `歡迎搭乘6767路線打狗客運 本車由${route.start}開往${route.end} 祝您旅途愉快一路平安`;
+            const el = document.getElementById('activeMarqueeText');
+            el.textContent = `歡迎搭乘${route.name} 本車由${route.start}開往${route.end} 祝您旅途愉快一路平安`;
+            
             speak(welcomeText, () => {
                 startGpsTracking();
                 runQueueLoop();
@@ -315,6 +368,10 @@
                 return;
             }
             const target = route.stations[currentStationIndex];
+            
+            // 若該站點沒有成功抓到經緯度(0,0)，略過距離計算
+            if(target.lat === 0 && target.lon === 0) return;
+
             const dist = getDistanceFromLatLonInMeters(lat, lon, target.lat, target.lon);
             
             const el = document.getElementById('activeMarqueeText');
