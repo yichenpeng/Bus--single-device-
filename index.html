@@ -991,7 +991,7 @@
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.style.animation = 'none';
                     el.classList.add('arriving');
-                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
+                    el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
 
                     announceArrival(target, isFinal);
                 }
