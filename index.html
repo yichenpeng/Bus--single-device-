@@ -69,6 +69,21 @@
         .search-status { font-size: 0.8rem; color: #ffaa00; margin-top: 0.3rem; }
 
         .btn-primary { width: 100%; margin-top: 0.6rem; }
+
+        /* 浮動的「儲存整條路線」按鈕：固定貼在畫面底部，不管捲到哪裡都看得到、按得到，
+           避免在某些裝置上因為螢幕高度或瀏覽器工具列，讓按鈕被卡在畫面外滑不到 */
+        .save-route-floating {
+            position: fixed;
+            left: 1.25rem;
+            right: 1.25rem;
+            bottom: 1rem;
+            margin-top: 0;
+            width: auto;
+            z-index: 500;
+            box-shadow: 0 -0.4rem 1rem rgba(0,0,0,0.5);
+        }
+        /* 建立路線頁面底部多留空間，避免最後一筆站點被浮動按鈕蓋住 */
+        #create-route-page { padding-bottom: 5.5rem; }
         .btn-danger { background-color: #dc3545; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
         .btn-edit { background-color: #ffc107; color: #000; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
         .short-input { flex: none; width: 15.6rem; }
@@ -212,7 +227,7 @@
         <h3 style="font-size: 1rem; margin: 0.6rem 0;">📋 站點清單（可按住 ☰ 上下拖曳排序）</h3>
         <ul id="stationList"></ul>
 
-        <button class="btn-primary" onclick="saveCurrentRoute()" style="background-color: #28a745; margin-top: 20px;">💾 儲存整條路線</button>
+        <button class="btn-primary save-route-floating" onclick="saveCurrentRoute()" style="background-color: #28a745;">💾 儲存整條路線</button>
     </div>
 
     <!-- 頁面 2：政令廣播設定 -->
@@ -991,7 +1006,7 @@
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.style.animation = 'none';
                     el.classList.add('arriving');
-                    el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
+                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
 
                     announceArrival(target, isFinal);
                 }
