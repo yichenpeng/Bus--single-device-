@@ -129,6 +129,7 @@
         }
 
         /* 字體大小改用固定 px（相對於 1280x720 虛擬舞台），縮放後在各裝置上視覺比例一致 */
+               /* 字體大小改用固定 px（相對於 1280x720 虛擬舞台），縮放後在各裝置上視覺比例一致 */
         .marquee-text {
             display: inline-block;
             white-space: nowrap;
@@ -145,6 +146,13 @@
             100% { transform: translateX(-100%); }
         }
 
+        /* 站名字數超過 8.5 個字時的單次滾動動畫：停在最後一個字顯現（貼齊容器右側） */
+        @keyframes marqueeStopAtEnd {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(var(--scroll-end-distance)); }
+        }
+
+
         .marquee-text.arriving {
             color: #ff3300;
             text-shadow: 0 0 25px rgba(255, 51, 0, 0.9);
@@ -154,13 +162,14 @@
 
         .gps-info-overlay { position: absolute; bottom: 20px; left: 20px; font-size: 22px; color: #aaa; background: rgba(0,0,0,0.8); padding: 8px 16px; border-radius: 6px; }
 
-        .gps-retry-btn {
+               .gps-retry-btn {
             position: absolute; bottom: 20px; right: 20px;
             font-size: 20px; padding: 10px 20px;
-            background: #17a2b8; color: #fff; border: none; border-radius: 8px;
+            background: #222222; color: #cccccc; border: 1px solid #444444; border-radius: 8px;
             cursor: pointer; font-weight: bold;
         }
-        .gps-retry-btn:hover { background: #138496; }
+        .gps-retry-btn:hover { background: #333333; color: #ffffff; }
+
     </style>
 </head>
 <body>
@@ -172,6 +181,7 @@
         <button class="menu-btn" onclick="openPage('broadcast-page')">2. 選擇或新建廣播</button>
         <button class="menu-btn" onclick="openPage('voice-page')">3. 語音參數調節</button>
         <button class="menu-btn" onclick="requestFullscreenAndStart();" style="background: #007bff;">4. 執行跑馬燈與自動報站</button>
+     
     </div>
 
     <!-- 路線管理主選單 -->
@@ -195,13 +205,14 @@
         <div id="route-list-container"></div>
     </div>
 
-    <!-- 子頁面 1-2：建立新路線與編輯站點 -->
+       <!-- 子頁面 1-2：建立新路線與編輯站點 -->
     <div class="page" id="create-route-page">
         <div class="back-bar">
-            <button class="back-btn" onclick="closePage('create-route-page')">⬅️ 返回</button>
+            <button class="back-btn" onclick="tryLeaveRouteEditor()">⬅️ 返回</button>
             <h2>建立與編輯路線站點</h2>
             <div></div>
         </div>
+
 
         <div class="route-name-container">
             <label for="newRouteName">路線名稱：</label>
@@ -274,7 +285,7 @@
                     <div class="marquee-text" id="activeMarqueeText">載入中...</div>
                 </div>
                 <div class="gps-info-overlay" id="gpsInfoOverlay">GPS 偵測中... (雙擊畫面任意處返回選單)</div>
-                <button class="gps-retry-btn" onclick="event.stopPropagation(); requestLocationPermission();">📍 重新嘗試定位</button>
+                <button class="gps-retry-btn" onclick="event.stopPropagation(); requestLocationPermission();">重新嘗試定位</button>
             </div>
         </div>
     </div>
@@ -335,8 +346,38 @@
             }
         })();
 
-        let editingStations = [];
+               let editingStations = [];
         let editingRouteIndex = null; // null = 建立新路線；有數字則代表正在編輯 routes[] 裡的既有路線，儲存時會直接覆蓋
+
+                function tryLeaveRouteEditor() {
+            const name = document.getElementById('newRouteName').value.trim();
+            // 如果連路線名稱都沒輸入，且半個站點都沒有，就直接返回，不跳出提示詞
+            if (!name && editingStations.length === 0) {
+                editingRouteIndex = null;
+                closePage('create-route-page');
+                return;
+            }
+
+            const userChoice = confirm("您尚未儲存目前的路線變更。\n\n點擊「確定」直接儲存並離開，點擊「取消」放棄修改並返回。");
+            if (userChoice) {
+                // 嘗試直接儲存
+                if (!name) {
+                    alert('請輸入路線名稱才能儲存！');
+                    return;
+                }
+                if (editingStations.length < 2) {
+                    alert('一條路線至少需要包含起點與終點等 2 個以上站點才能儲存！');
+                    return;
+                }
+                saveCurrentRoute();
+            } else {
+                // 選擇捨棄，直接關閉頁面
+                editingRouteIndex = null;
+                closePage('create-route-page');
+            }
+        }
+
+
         let watchId = null;
         let currentStationIndex = 1;
         let marqueeTimer = null;
@@ -563,13 +604,15 @@
                 currentRouteIndex = routes.length - 1;
             }
 
-            localStorage.setItem('bus_routes', JSON.stringify(routes));
+                        localStorage.setItem('bus_routes', JSON.stringify(routes));
             localStorage.setItem('bus_current_route', currentRouteIndex);
 
             editingRouteIndex = null;
             alert('路線儲存成功！');
             closePage('create-route-page');
+            renderRouteList();
         }
+
 
         // 從「選擇/刪除路線」清單點「編輯」進來：載入該路線的站點資料，供修改後覆蓋儲存
         window.editRoute = function(idx) {
@@ -845,8 +888,7 @@
             announceNextStation({ name: '中正大學', nameEn: ' National Chung Cheng University' }, false);
         }
 
-                    
-                    function requestFullscreenAndStart() {
+                function requestFullscreenAndStart() {
             const elem = document.documentElement;
             if (elem.requestFullscreen) {
                 elem.requestFullscreen().catch(err => {
@@ -862,6 +904,7 @@
 
         function startMarqueeMode() {
             if(routes.length === 0 || !routes[currentRouteIndex] || routes[currentRouteIndex].stations.length === 0) {
+     
                 alert('請先設定好路線與至少一個站點！'); return;
             }
             openPage('marquee-page');
@@ -875,23 +918,32 @@
             const route = routes[currentRouteIndex];
             const welcomeText = `歡迎搭乘${route.name}。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
 
-            const el = document.getElementById('activeMarqueeText');
+                        const el = document.getElementById('activeMarqueeText');
             el.classList.remove('arriving');
             el.style.animation = 'none';
             el.textContent = `歡迎搭乘${route.name} 本車由${route.start}開往${route.end} 祝您旅途愉快一路平安`;
             void el.offsetWidth;
 
             const textWidth = el.scrollWidth;
+            const containerWidth = el.parentElement.clientWidth;
             const duration = textWidth / 300 + 1;
             const delay = 2;
             const marqueeTime = (delay + duration) * 1000;
 
             setTimeout(() => {
                 if (!el.classList.contains('arriving')) {
-                    el.style.animation = `marqueeScroll ${duration}s linear infinite`;
-                    el.style.animationDelay = `${delay}s`;
+                    if (textWidth > containerWidth) {
+                        const distance = containerWidth - textWidth;
+                        el.style.setProperty('--scroll-end-distance', distance + 'px');
+                        el.style.animation = `marqueeStopAtEnd ${duration}s linear forwards`;
+                        el.style.animationDelay = `${delay}s`;
+                    } else {
+                        el.style.animation = `marqueeScroll ${duration}s linear infinite`;
+                        el.style.animationDelay = `${delay}s`;
+                    }
                 }
             }, 100);
+
 
             let isSpeechDone = false;
             let isMarqueeDone = false;
@@ -1021,7 +1073,7 @@
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.style.animation = 'none';
                     el.classList.add('arriving');
-                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
+                    el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
 
                     announceArrival(target, isFinal);
                 }
@@ -1071,7 +1123,7 @@
                     return;
                 }
 
-                if (!isBroadcastTurn) {
+                                                if (!isBroadcastTurn) {
                     let stationMsg = '';
                     if (currentStationIndex < route.stations.length) {
                         const isFinal = (currentStationIndex === route.stations.length - 1);
@@ -1086,8 +1138,27 @@
                     el.textContent = stationMsg;
                     isBroadcastTurn = true;
 
-                    marqueeTimer = setTimeout(showNextMessage, 5000);
+                    void el.offsetWidth;
+                    const textWidth = el.scrollWidth;
+                    const containerWidth = el.parentElement.clientWidth;
+
+                    if (textWidth > containerWidth) {
+                        const duration = (textWidth - containerWidth) / 150 + 1;
+                        const distance = containerWidth - textWidth;
+                        el.style.setProperty('--scroll-end-distance', distance + 'px');
+                        
+                        // 設定 animationDelay: 2s 讓它在原地靜止停留 2 秒後才開始滾動
+                        el.style.animation = `marqueeStopAtEnd ${duration}s linear forwards`;
+                        el.style.animationDelay = '2s';
+                        
+                        // 總停留時間 = 2秒等待 + 滾動時間 + 2秒看完最後一個字
+                        marqueeTimer = setTimeout(showNextMessage, (2 + duration + 2) * 1000);
+                    } else {
+                        marqueeTimer = setTimeout(showNextMessage, 5000);
+                    }
                 } else {
+
+
                     let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
 
                     el.style.animation = 'none';
