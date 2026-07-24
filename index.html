@@ -5,8 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>公車智慧播報系統</title>
-    <style>
+      <style>
         * { box-sizing: border-box; }
+
+        /*
+          流動式字體：選單／編輯頁面有捲動清單與文字輸入框，
+          用 rem + clamp() 讓整體比例隨裝置寬度縮放，同時保留原生捲動／打字體驗。
+        */
+        html { font-size: clamp(14px, 2.2vw, 19px); }
+
         body {
             margin: 0; padding: 0; width: 100vw; height: 100vh;
             background: #111; color: #fff; font-family: Arial, sans-serif;
@@ -15,84 +22,100 @@
 
         /* 主選單畫面 */
         .menu-container {
-            width: 100%; max-width: 500px; padding: 20px;
-            display: flex; flex-direction: column; gap: 20px; text-align: center;
+            width: 100%; max-width: 500px; padding: 1.25rem;
+            display: flex; flex-direction: column; gap: 1.25rem; text-align: center;
         }
-        .menu-container h1 { color: #ffaa00; margin-bottom: 10px; font-size: 28px; }
+        .menu-container h1 { color: #ffaa00; margin-bottom: 0.6rem; font-size: 1.75rem; }
         .menu-btn {
-            padding: 20px; font-size: 20px; font-weight: bold; color: #fff;
-            background: #222; border: 2px solid #444; border-radius: 12px;
+            padding: 1.25rem; font-size: 1.25rem; font-weight: bold; color: #fff;
+            background: #222; border: 2px solid #444; border-radius: 0.75rem;
             cursor: pointer; transition: 0.2s;
         }
         .menu-btn:hover { background: #333; border-color: #ffaa00; }
 
         /* 通用子頁面樣式 */
-                .page {
+        .page {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #111; flex-direction: column; justify-content: flex-start; padding: 20px; overflow-y: auto;
+            background: #111; flex-direction: column; justify-content: flex-start; align-items: stretch; padding: 1.25rem; overflow-y: auto; gap: 0.5rem;
         }
-
         .page.active { display: flex; }
-        .back-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .back-btn { background: #444; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .back-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem; }
+        .back-btn { background: #444; color: #fff; border: none; padding: 0.6rem 0.9rem; border-radius: 0.4rem; cursor: pointer; font-size: 1rem; }
 
         /* 輸入與清單樣式 */
-        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #222; padding: 15px; border-radius: 6px; border: 1px solid #444; }
-        .input-row { display: flex; gap: 10px; }
-        input, select { flex: 1; padding: 10px; font-size: 16px; background: #111; color: #fff; border: 1px solid #444; border-radius: 4px; }
-        
-        /* 縮小路線名稱輸入框 */
-        .route-name-container { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #222; padding: 12px; border-radius: 6px; border: 1px solid #444; }
-        .route-name-container label { font-size: 15px; color: #ffaa00; white-space: nowrap; font-weight: bold; }
-        .route-name-container input { flex: none; width: 250px; }
+        .input-group { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.9rem; background: #222; padding: 0.9rem; border-radius: 0.4rem; border: 1px solid #444; }
+        .input-row { display: flex; gap: 0.6rem; }
+        input, select { flex: 1; padding: 0.6rem; font-size: 1rem; background: #111; color: #fff; border: 1px solid #444; border-radius: 0.25rem; }
 
-        button { padding: 10px 15px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .route-name-container { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; background: #222; padding: 0.7rem; border-radius: 0.4rem; border: 1px solid #444; }
+        .route-name-container label { font-size: 0.95rem; color: #ffaa00; white-space: nowrap; font-weight: bold; }
+        .route-name-container input { flex: none; width: 15.6rem; }
+
+        button { padding: 0.6rem 0.9rem; font-size: 1rem; background-color: #28a745; color: white; border: none; border-radius: 0.25rem; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #218838; }
 
         ul { list-style: none; padding: 0; margin: 0; }
-        .drag-handle { cursor: ns-resize; color: #888; font-size: 20px; padding: 0 5px; user-select: none; }
-        
-        li { background: #222; border: 1px solid #444; margin-bottom: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center; border-radius: 4px; }
+        .drag-handle { cursor: ns-resize; color: #888; font-size: 1.25rem; padding: 0 0.3rem; user-select: none; }
+
+        li { background: #222; border: 1px solid #444; margin-bottom: 0.5rem; padding: 0.6rem; display: flex; justify-content: space-between; align-items: center; border-radius: 0.25rem; }
         .sortable-ghost { opacity: 0.3; background: #444; }
         .sortable-chosen { background: #333; }
 
-        .station-info { font-size: 13px; color: #aaa; margin-top: 4px; }
-        .actions { display: flex; gap: 5px; }
-        .actions button { background-color: #dc3545; padding: 5px 10px; font-size: 13px; }
-        .search-status { font-size: 13px; color: #ffaa00; margin-top: 5px; }
+        .station-info { font-size: 0.8rem; color: #aaa; margin-top: 0.25rem; }
+        .actions { display: flex; gap: 0.3rem; }
+        .actions button { background-color: #dc3545; padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+        .search-status { font-size: 0.8rem; color: #ffaa00; margin-top: 0.3rem; }
 
-        .btn-primary { width: 100%; margin-top: 10px; }
-        .btn-danger { background-color: #dc3545; padding: 6px 12px; font-size: 14px; }
-        .short-input { flex: none; width: 250px; }
+        .btn-primary { width: 100%; margin-top: 0.6rem; }
+        .btn-danger { background-color: #dc3545; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+        .short-input { flex: none; width: 15.6rem; }
 
-        /* 跑馬燈執行畫面 */
+        /* ---- 播報執行畫面：固定 1280x720 虛擬舞台 + JS 等比縮放，確保跨裝置比例一致 ---- */
         #marquee-page { background: #000; padding: 0; justify-content: center; align-items: center; }
-        .marquee-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative; }
-        .marquee-container { overflow: hidden; white-space: nowrap; width: 100%; box-sizing: border-box; position: relative; }
-        .marquee-text { 
-            display: inline-block; 
-            padding-left: 0; 
-            font-size: 50vh; 
-            line-height: 1; 
-            font-weight: bold; 
-            color: #ffaa00; 
-            white-space: nowrap; 
-            text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); 
+
+        #stage-marquee {
+            position: fixed; top: 0; left: 0;
+            width: 1280px; height: 720px;
+            transform-origin: top left;
+            background: #000;
         }
 
-        .marquee-text.scrolling {
-            padding-left: 100%; 
-            animation: marqueeScroll 18s linear infinite; 
+        .marquee-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative; }
+
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            background: #000;
+            padding: 0;
+            border: none;
+        }
+
+        /* 字體大小改用固定 px（相對於 1280x720 虛擬舞台），縮放後在各裝置上視覺比例一致 */
+        .marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            font-size: 180px;
+            line-height: 1;
+            font-weight: bold;
+            color: #ffaa00;
+            text-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+            animation: none;
         }
 
         @keyframes marqueeScroll {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
-        .marquee-text.arriving { color: #ff3300; text-shadow: 0 0 25px rgba(255, 51, 0, 0.9); animation: blink 0.6s infinite alternate; }
+        .marquee-text.arriving {
+            color: #ff3300;
+            text-shadow: 0 0 25px rgba(255, 51, 0, 0.9);
+            animation: blink 0.6s infinite alternate !important;
+        }
         @keyframes blink { from { opacity: 1; } to { opacity: 0.35; } }
-        .gps-info-overlay { position: absolute; bottom: 20px; font-size: 14px; color: #aaa; background: rgba(0,0,0,0.8); padding: 6px 12px; border-radius: 4px; }
+
+        .gps-info-overlay { position: absolute; bottom: 20px; font-size: 22px; color: #aaa; background: rgba(0,0,0,0.8); padding: 8px 16px; border-radius: 6px; }
     </style>
 </head>
 <body>
@@ -134,23 +157,29 @@
             <h2>建立與編輯路線站點</h2>
             <div></div>
         </div>
-        
+
         <div class="route-name-container">
             <label for="newRouteName">路線名稱：</label>
             <input type="text" id="newRouteName" placeholder="例如: 6767路打狗客運">
         </div>
 
         <div class="input-group">
-            <h3 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 16px;">➕ 新增站點</h3>
+            <h3 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 1rem;">➕ 新增站點</h3>
             <div class="input-row">
-                <input type="text" id="stationNickname" placeholder="站名（例如：總公司）">
+                <input type="text" id="stationNickname" placeholder="站名（中文，例如：總公司）">
+            </div>
+            <div class="input-row">
+                <input type="text" id="stationNameEn" placeholder="英文站名（語音播報用，例如：Head Office）">
+            </div>
+            <div class="input-row">
                 <input type="text" id="stationAddress" placeholder="真實地址（例如：台北市信義路五段7號）">
             </div>
             <button id="addStationBtn">查詢座標並新增站點</button>
             <div id="searchStatus" class="search-status"></div>
+            <div style="font-size:0.75rem; color:#888;">💡 英文站名是語音播報要用的，Nominatim 地址查詢不會自動生成英文站名，請自行填寫（沒填會直接借用中文站名發音，會不太標準）。</div>
         </div>
 
-        <h3 style="font-size: 16px; margin: 10px 0;">📋 站點清單（可按住 ☰ 上下拖曳排序）</h3>
+        <h3 style="font-size: 1rem; margin: 0.6rem 0;">📋 站點清單（可按住 ☰ 上下拖曳排序）</h3>
         <ul id="stationList"></ul>
 
         <button class="btn-primary" onclick="saveCurrentRoute()" style="background-color: #28a745; margin-top: 20px;">💾 儲存整條路線</button>
@@ -178,51 +207,82 @@
             <h2>語音設定 (自動儲存不重置)</h2>
             <div></div>
         </div>
-        
-        <label>語速 (Speed: <span id="speedVal">1.0</span>)</label>
-        <input type="range" id="speechRate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateVoiceSettings()">
-        
-        <label style="margin-top: 15px;">音高 (Pitch: <span id="pitchVal">1.0</span>)</label>
-        <input type="range" id="speechPitch" min="0.5" max="1.5" step="0.1" value="1.0" oninput="updateVoiceSettings()">
 
-        <label style="margin-top: 15px;">音量 (Volume: <span id="volVal">1.0</span>)</label>
-        <input type="range" id="speechVol" min="0.0" max="1.0" step="0.1" value="1.0" oninput="updateVoiceSettings()">
-        
-        <!-- 單一預聽按鈕（已同步最新拉桿數值） -->
-        <button class="btn-primary" onclick="testVoice()" style="background-color: #007bff; margin-top: 25px;">🔊 預聽當前效果</button>
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+            <label>語速 (Speed: <span id="speedVal">1.0</span>)</label>
+            <input type="range" id="speechRate" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateVoiceSettings()">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+            <label>音高 (Pitch: <span id="pitchVal">1.0</span>)</label>
+            <input type="range" id="speechPitch" min="0.5" max="1.5" step="0.1" value="1.0" oninput="updateVoiceSettings()">
+        </div>
+
+        <button class="btn-primary" onclick="testAnnouncement()" style="background-color: #6c757d; margin-top: 5px;">🗣️ 預聽「下一站」雙語播報範例</button>
     </div>
 
-    <!-- 頁面 4：跑馬燈與 GPS 執行頁面 -->
+    <!-- 頁面 4：跑馬燈與 GPS 執行頁面（固定舞台，確保跨裝置比例一致） -->
     <div class="page" id="marquee-page" ondblclick="returnToMenuFromMarquee()">
-        <div class="marquee-wrapper">
-            <div class="marquee-container">
-                <div class="marquee-text" id="activeMarqueeText">載入中...</div>
+        <div id="stage-marquee">
+            <div class="marquee-wrapper">
+                <div class="marquee-container">
+                    <div class="marquee-text" id="activeMarqueeText">載入中...</div>
+                </div>
+                <div class="gps-info-overlay" id="gpsInfoOverlay">GPS 偵測中... (雙擊畫面任意處返回選單)</div>
             </div>
-            <div class="gps-info-overlay" id="gpsInfoOverlay">GPS 偵測中... (雙擊畫面任意處返回選單)</div>
         </div>
     </div>
 
     <script>
-        let routes = JSON.parse(localStorage.getItem('bus_routes')) || [];
+        // ---- 內建預設示範路線：不管誰在哪台裝置第一次開啟這個頁面，都先有這條路線可以測試 ----
+        const DEFAULT_ROUTE = {
+            name: '6767打狗客運',
+            start: '中正大學',
+            end: '雲林高鐵站',
+            stations: [
+                { name: '中正大學', nameEn: 'National Chung Cheng University', address: '', lat: 23.56, lon: 120.47 },
+                { name: '大林驛站', nameEn: 'Darlin Bus Station', address: '', lat: 23.61, lon: 120.44 },
+                { name: '雲林高鐵站', nameEn: 'Yunlin HSR Station', address: '', lat: 23.71, lon: 120.41 }
+            ]
+        };
+        DEFAULT_ROUTE.forwardStations = JSON.parse(JSON.stringify(DEFAULT_ROUTE.stations));
+
+        const storedRoutes = JSON.parse(localStorage.getItem('bus_routes'));
+        let routes = (storedRoutes && storedRoutes.length > 0) ? storedRoutes : [JSON.parse(JSON.stringify(DEFAULT_ROUTE))];
         let currentRouteIndex = parseInt(localStorage.getItem('bus_current_route')) || 0;
         let broadcasts = JSON.parse(localStorage.getItem('bus_broadcasts')) || ['請隨身攜帶好個人隨身行李', '上下車請刷卡，祝您旅途愉快'];
-        let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0, volume: 1.0 };
-        
+        let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0 };
+
+        // 若是第一次開啟（沒有任何已儲存的路線），把預設路線直接存進 localStorage，
+        // 這樣重新整理頁面、或去「路線管理」清單裡看，也會看到這條路線
+        if (!storedRoutes || storedRoutes.length === 0) {
+            localStorage.setItem('bus_routes', JSON.stringify(routes));
+            localStorage.setItem('bus_current_route', '0');
+        }
+
         let editingStations = [];
         let watchId = null;
-        let currentStationIndex = 0;
+        let currentStationIndex = 1;
         let marqueeTimer = null;
+
+        // ---- 到站/離站狀態機 ----
+        let stationPhase = 'next';           // 'next'（前往下一站） | 'arriving'（即將到站，<=100m） | 'finished'（已完成路線）
+        let minDistanceInArriving = Infinity; // 進入「即將到站」後持續記錄的最短距離，用來判斷是否已經離站
+        const ARRIVE_THRESHOLD = 100;         // 公尺，<= 此值視為「即將到站」
+        const DEPART_MARGIN = 15;             // 公尺，比最短距離拉開這麼多，視為已經離站（抓 GPS 誤差用）
+
+        // ---- 語音播報中斷控制 ----
+        let speechAborted = false;
+        let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能立刻刷新跑馬燈文字
 
         document.getElementById('speechRate').value = voiceSettings.rate;
         document.getElementById('speedVal').innerText = voiceSettings.rate;
         document.getElementById('speechPitch').value = voiceSettings.pitch;
         document.getElementById('pitchVal').innerText = voiceSettings.pitch;
-        document.getElementById('speechVol').value = voiceSettings.volume;
-        document.getElementById('volVal').innerText = voiceSettings.volume;
 
-        function openPage(pageId) { 
-            document.getElementById(pageId).classList.add('active'); 
-            if(pageId === 'broadcast-page') renderBroadcastUI(); 
+        function openPage(pageId) {
+            document.getElementById(pageId).classList.add('active');
+            if(pageId === 'broadcast-page') renderBroadcastUI();
             if(pageId === 'create-route-page') initRouteEditor();
         }
         function closePage(pageId) { document.getElementById(pageId).classList.remove('active'); }
@@ -250,19 +310,14 @@
         });
 
         function initRouteEditor() {
-            if(routes.length > 0 && routes[currentRouteIndex]) {
-                const r = routes[currentRouteIndex];
-                document.getElementById('newRouteName').value = r.name;
-                editingStations = JSON.parse(JSON.stringify(r.stations || []));
-            } else {
-                document.getElementById('newRouteName').value = '';
-                editingStations = [];
-            }
+            document.getElementById('newRouteName').value = '';
+            editingStations = [];
             renderEditingStations();
         }
 
         document.getElementById('addStationBtn').addEventListener('click', async () => {
             const nickname = document.getElementById('stationNickname').value.trim();
+            const nameEn = document.getElementById('stationNameEn').value.trim();
             const address = document.getElementById('stationAddress').value.trim();
             const searchStatus = document.getElementById('searchStatus');
 
@@ -286,10 +341,11 @@
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
                 searchStatus.textContent = `✅ 成功取得地理位置座標！`;
-                
-                editingStations.push({ name: nickname, address: address, lat: lat, lon: lon });
+
+                editingStations.push({ name: nickname, nameEn: nameEn, address: address, lat: lat, lon: lon });
 
                 document.getElementById('stationNickname').value = '';
+                document.getElementById('stationNameEn').value = '';
                 document.getElementById('stationAddress').value = '';
                 renderEditingStations();
             } catch (error) {
@@ -301,7 +357,7 @@
         function renderEditingStations() {
             const list = document.getElementById('stationList');
             list.innerHTML = '';
-            
+
             if(editingStations.length === 0) {
                 list.innerHTML = '<p style="color:#888; text-align:center;">目前尚無站點，請在上方新增</p>';
                 return;
@@ -310,12 +366,13 @@
             editingStations.forEach((s, idx) => {
                 const li = document.createElement('li');
                 const coordText = `(座標: ${s.lat.toFixed(2)}, ${s.lon.toFixed(2)})`;
+                const enText = s.nameEn ? ` | EN: ${s.nameEn}` : ' | ⚠️ 尚未填英文站名';
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
                         <span class="drag-handle">☰</span>
                         <div style="flex: 1;">
                             <strong>${idx + 1}. ${s.name}</strong>
-                            <div class="station-info">${s.address || ''} ${coordText}</div>
+                            <div class="station-info">${s.address || ''} ${coordText}${enText}</div>
                         </div>
                         <div class="actions">
                             <button class="delete-btn" onclick="removeEditingStation(${idx})">刪除</button>
@@ -338,12 +395,14 @@
 
             const newRoute = {
                 name: name,
+                forwardStations: JSON.parse(JSON.stringify(editingStations)), // 固定保存原始去程
                 start: editingStations[0].name,
                 end: editingStations[editingStations.length - 1].name,
-                stations: editingStations
+                stations: JSON.parse(JSON.stringify(editingStations))
             };
 
             if(routes[currentRouteIndex] && routes[currentRouteIndex].name === name) {
+                newRoute.forwardStations = JSON.parse(JSON.stringify(editingStations));
                 routes[currentRouteIndex] = newRoute;
             } else {
                 routes.push(newRoute);
@@ -366,27 +425,115 @@
             }
 
             routes.forEach((r, idx) => {
-                const div = document.createElement('div');
-                div.style = "display:flex; justify-content:space-between; align-items:center; background:#222; border:1px solid #444; padding:12px; margin-bottom:8px; border-radius:6px;";
                 const isSelected = (idx === currentRouteIndex) ? '🔥 [使用中]' : '';
+
+                if (!r.forwardStations && r.stations) {
+                    r.forwardStations = JSON.parse(JSON.stringify(r.stations));
+                }
+
+                let currentStatusText = "去程";
+                if (r.forwardStations && r.stations && r.forwardStations.length === r.stations.length) {
+                    let isSame = true;
+                    for (let i = 0; i < r.forwardStations.length; i++) {
+                        if (r.forwardStations[i].name !== r.stations[i].name) {
+                            isSame = false;
+                            break;
+                        }
+                    }
+                    if (!isSame) currentStatusText = "回程";
+                }
+
+                const div = document.createElement('div');
+                div.style = "background:#222; border:1px solid #444; margin-bottom:10px; border-radius:6px; overflow:hidden;";
+
                 div.innerHTML = `
-                    <div>
-                        <strong>${r.name}</strong> ${isSelected}<br>
-                        <small style="color:#aaa;">${r.start || '起'} ➔ ${r.end || '終'} (共 ${r.stations.length} 站)</small>
+                    <div onclick="toggleRouteExpand(${idx})" style="display:flex; justify-content:space-between; align-items:center; padding:12px; cursor:pointer; background:#222; transition:0.2s;" onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='#222'">
+                        <div>
+                            <strong>${r.name}</strong> (${currentStatusText}) ${isSelected}<br>
+                            <small style="color:#aaa;">${r.stations[0].name} ➔ ${r.stations[r.stations.length - 1].name} (共 ${r.stations.length} 站) 🔽</small>
+                        </div>
+                        <div>
+                            <button class="btn-danger" onclick="event.stopPropagation(); deleteRoute(${idx})">刪除</button>
+                        </div>
                     </div>
-                    <div>
-                        <button class="btn-primary" style="padding:6px 10px; font-size:14px; width:auto; margin-right:5px;" onclick="selectRoute(${idx})">選擇</button>
-                        <button class="btn-danger" onclick="deleteRoute(${idx})">刪除</button>
+
+                    <div id="expand-panel-${idx}" style="display:none; background:#181818; padding:15px; border-top:1px solid #444;">
+                        <div style="margin-bottom: 12px; text-align: center;">
+                            <label style="color: #ffaa00; margin-right: 15px; cursor:pointer;">
+                                <input type="radio" name="routeDirection_${idx}" value="forward" checked onchange="updateInlinePreview(${idx})"> 去程
+                            </label>
+                            <label style="color: #ffaa00; cursor:pointer;">
+                                <input type="radio" name="routeDirection_${idx}" value="backward" onchange="updateInlinePreview(${idx})"> 回程
+                            </label>
+                        </div>
+
+                        <div id="inline-station-list-${idx}" style="max-height: 200px; overflow-y: auto; background: #111; padding: 10px; border: 1px solid #333; margin-bottom: 12px; text-align: left;">
+                        </div>
+
+                        <button onclick="setRouteDirectionAndSelect(${idx})" style="width: 100%; background: #ffaa00; color: #000; padding: 8px; border: none; border-radius: 4px; font-weight: bold;">以此方向設定並使用此路線</button>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        function selectRoute(idx) {
-            currentRouteIndex = idx;
+        function toggleRouteExpand(index) {
+            const panel = document.getElementById(`expand-panel-${index}`);
+            const isHidden = panel.style.display === 'none';
+
+            document.querySelectorAll('[id^="expand-panel-"]').forEach(p => p.style.display = 'none');
+
+            if (isHidden) {
+                panel.style.display = 'block';
+                updateInlinePreview(index);
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function updateInlinePreview(index) {
+            const route = routes[index];
+            const direction = document.querySelector(`input[name="routeDirection_${index}"]:checked`).value;
+            const listContainer = document.getElementById(`inline-station-list-${index}`);
+            listContainer.innerHTML = '';
+
+            let baseStations = route.forwardStations || route.stations;
+            let stationsToDisplay = [...baseStations];
+            if (direction === 'backward') {
+                stationsToDisplay.reverse();
+            }
+
+            stationsToDisplay.forEach((station, idx) => {
+                const item = document.createElement('div');
+                item.style.padding = '4px 6px';
+                item.style.borderBottom = '1px solid #222';
+                item.style.color = '#ccc';
+                item.style.fontSize = '14px';
+                item.innerHTML = `<span style="color: #ffaa00; margin-right: 8px;">${idx + 1}.</span> ${station.name}`;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function setRouteDirectionAndSelect(index) {
+            const direction = document.querySelector(`input[name="routeDirection_${index}"]:checked`).value;
+            currentRouteIndex = index;
+            let route = routes[currentRouteIndex];
+
+            let baseStations = route.forwardStations || route.stations;
+            let finalStations = JSON.parse(JSON.stringify(baseStations));
+
+            if (direction === 'backward') {
+                finalStations.reverse();
+            }
+
+            routes[currentRouteIndex].stations = finalStations;
+            routes[currentRouteIndex].start = finalStations[0].name;
+            routes[currentRouteIndex].end = finalStations[finalStations.length - 1].name;
+
+            localStorage.setItem('bus_routes', JSON.stringify(routes));
             localStorage.setItem('bus_current_route', currentRouteIndex);
-            alert(`已切換至路線：${routes[idx].name}`);
+
+            alert(`已成功切換路線與方向：${routes[currentRouteIndex].name} (${direction === 'forward' ? '去程' : '回程'})`);
             renderRouteList();
         }
 
@@ -428,28 +575,112 @@
         function updateVoiceSettings() {
             voiceSettings.rate = parseFloat(document.getElementById('speechRate').value);
             voiceSettings.pitch = parseFloat(document.getElementById('speechPitch').value);
-            voiceSettings.volume = parseFloat(document.getElementById('speechVol').value);
             document.getElementById('speedVal').innerText = voiceSettings.rate;
             document.getElementById('pitchVal').innerText = voiceSettings.pitch;
-            document.getElementById('volVal').innerText = voiceSettings.volume;
             localStorage.setItem('bus_voice', JSON.stringify(voiceSettings));
         }
 
+        // ---- 數字逐字唸法：把中文語音裡的數字拆成逐字念（例如 6767 -> 六七六七，而不是六千七百六十七） ----
+        // 常見於路線編號、站名編號，中文 TTS 預設會把連續數字唸成完整數值，這裡把每個數字改成對應中文字，
+        // 讓語音引擎當成一般文字逐字唸出。
+        function digitsToChineseDigits(text) {
+            const map = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+            return text.replace(/\d/g, d => map[parseInt(d, 10)]);
+        }
+
+        // ---- 一般單句語音（歡迎詞用，固定中文）----
         function speak(text, callback) {
             if (!('speechSynthesis' in window)) return;
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
+            const utterance = new SpeechSynthesisUtterance(digitsToChineseDigits(text));
             utterance.rate = voiceSettings.rate;
             utterance.pitch = voiceSettings.pitch;
-            utterance.volume = voiceSettings.volume;
             utterance.lang = 'zh-TW';
             if(callback) utterance.onend = callback;
             window.speechSynthesis.speak(utterance);
         }
 
-        function testVoice() { 
-            updateVoiceSettings(); // 確保抓取當前拉桿數值
-            speak('測試 test '); 
+        // ---- 雙語分段語音播報（用於「下一站」「即將到站」）----
+        // segments: [{ text, lang, pause }]，逐段播放，段落間用 pause(ms) 製造停頓
+        function speakSequence(segments) {
+            if (!('speechSynthesis' in window)) return;
+            speechAborted = false;
+            window.speechSynthesis.cancel(); // 避免疊在還沒講完的前一段播報上
+
+            let i = 0;
+            function next() {
+                if (speechAborted || i >= segments.length) return;
+                const seg = segments[i];
+                i++;
+
+                // 中文段落把數字拆成逐字念；英文段落維持原樣（英文唸數字本來就是逐位念，不受影響）
+                const spokenText = seg.lang && seg.lang.startsWith('zh')
+                    ? digitsToChineseDigits(seg.text)
+                    : seg.text;
+
+                const utter = new SpeechSynthesisUtterance(spokenText);
+                utter.lang = seg.lang;
+                utter.rate = voiceSettings.rate;
+                utter.pitch = voiceSettings.pitch;
+
+                utter.onend = () => {
+                    if (speechAborted) return;
+                    setTimeout(next, seg.pause !== undefined ? seg.pause : 300);
+                };
+                utter.onerror = () => {
+                    if (speechAborted) return;
+                    setTimeout(next, 50);
+                };
+                window.speechSynthesis.speak(utter);
+            }
+            next();
+        }
+
+        // 「下一站，XX站，next stop，XX Station」／終點站版本
+        function announceNextStation(station, isFinal) {
+            const nameZh = station.name;
+            const nameEn = station.nameEn || station.name;
+
+            const segments = isFinal ? [
+                { text: '下一站', lang: 'zh-TW', pause: 300 },
+                { text: '終點站', lang: 'zh-TW', pause: 350 },
+                { text: `${nameZh}站`, lang: 'zh-TW', pause: 450 },
+                { text: 'next stop', lang: 'en-US', pause: 300 },
+                { text: 'the final station', lang: 'en-US', pause: 350 },
+                { text: `${nameEn} Station`, lang: 'en-US', pause: 0 }
+            ] : [
+                { text: '下一站', lang: 'zh-TW', pause: 300 },
+                { text: `${nameZh}站`, lang: 'zh-TW', pause: 450 },
+                { text: 'next stop', lang: 'en-US', pause: 300 },
+                { text: `${nameEn} Station`, lang: 'en-US', pause: 0 }
+            ];
+
+            speakSequence(segments);
+        }
+
+        // 「XX站，到了，XX Station, is arriving」／終點站版本
+        function announceArrival(station, isFinal) {
+            const nameZh = station.name;
+            const nameEn = station.nameEn || station.name;
+
+            const segments = isFinal ? [
+                { text: '終點站', lang: 'zh-TW', pause: 300 },
+                { text: `${nameZh}站`, lang: 'zh-TW', pause: 350 },
+                { text: '到了', lang: 'zh-TW', pause: 450 },
+                { text: 'the final station', lang: 'en-US', pause: 300 },
+                { text: `${nameEn} Station, is arriving`, lang: 'en-US', pause: 0 }
+            ] : [
+                { text: `${nameZh}站`, lang: 'zh-TW', pause: 350 },
+                { text: '到了', lang: 'zh-TW', pause: 450 },
+                { text: `${nameEn} Station, is arriving`, lang: 'en-US', pause: 0 }
+            ];
+
+            speakSequence(segments);
+        }
+
+        function testAnnouncement() {
+            updateVoiceSettings();
+            announceNextStation({ name: '總公司', nameEn: 'Head Office' }, false);
         }
 
         function startMarqueeMode() {
@@ -457,25 +688,66 @@
                 alert('請先設定好路線與至少一個站點！'); return;
             }
             openPage('marquee-page');
-            currentStationIndex = 0;
-            
+            fitMarqueeStage();
+
+            currentStationIndex = 1;
+            stationPhase = 'next';
+            minDistanceInArriving = Infinity;
+            speechAborted = false;
+
             const route = routes[currentRouteIndex];
             const welcomeText = `歡迎搭乘${route.name}。本車由${route.start}開往${route.end}。祝您旅途愉快一路平安`;
-            
+
             const el = document.getElementById('activeMarqueeText');
-            el.classList.remove('scrolling');
+            el.classList.remove('arriving');
             el.style.animation = 'none';
             el.textContent = `歡迎搭乘${route.name} 本車由${route.start}開往${route.end} 祝您旅途愉快一路平安`;
-            
+            void el.offsetWidth;
+
+            const textWidth = el.scrollWidth;
+            const duration = textWidth / 150 + 1;
+            const delay = 2;
+            const marqueeTime = (delay + duration) * 1000;
+
+            setTimeout(() => {
+                if (!el.classList.contains('arriving')) {
+                    el.style.animation = `marqueeScroll ${duration}s linear infinite`;
+                    el.style.animationDelay = `${delay}s`;
+                }
+            }, 100);
+
+            let isSpeechDone = false;
+            let isMarqueeDone = false;
+
+            function checkAndProceed() {
+                if (isSpeechDone && isMarqueeDone) {
+                    startGpsTracking();
+                    runQueueLoop();
+
+                    // 一開始就先播報第一個目的地，符合「下一站，XX」的一致邏輯
+                    const firstTarget = route.stations[currentStationIndex];
+                    if (firstTarget) {
+                        const isFinal = (currentStationIndex === route.stations.length - 1);
+                        announceNextStation(firstTarget, isFinal);
+                    }
+                }
+            }
+
+            marqueeTimer = setTimeout(() => {
+                isMarqueeDone = true;
+                checkAndProceed();
+            }, marqueeTime);
+
             speak(welcomeText, () => {
-                startGpsTracking();
-                runQueueLoop();
+                isSpeechDone = true;
+                checkAndProceed();
             });
         }
 
         function returnToMenuFromMarquee() {
             if(watchId !== null) navigator.geolocation.clearWatch(watchId);
             clearTimeout(marqueeTimer);
+            speechAborted = true; // 停止分段語音播報接下去繼續講
             if('speechSynthesis' in window) window.speechSynthesis.cancel();
             closePage('marquee-page');
         }
@@ -491,29 +763,61 @@
             }, { enableHighAccuracy: true });
         }
 
+        // ---- 核心：距離判斷（即將到站 / 離站換站）----
+        // next：距離 > 100m，前往中
+        // arriving：距離 <= 100m，即將到站，並持續記錄最短距離
+        // 一旦距離比最短距離明顯拉開（超過 DEPART_MARGIN），視為已離站，換下一站
         function checkStationDistance(lat, lon) {
             const route = routes[currentRouteIndex];
-            if(currentStationIndex >= route.stations.length) {
-                document.getElementById('gpsInfoOverlay').innerText = '已抵達終點站';
+            const overlay = document.getElementById('gpsInfoOverlay');
+            const el = document.getElementById('activeMarqueeText');
+
+            if (stationPhase === 'finished' || currentStationIndex >= route.stations.length) {
+                stationPhase = 'finished';
+                overlay.innerText = '已抵達終點站';
                 return;
             }
-            const target = route.stations[currentStationIndex];
-            const dist = getDistanceFromLatLonInMeters(lat, lon, target.lat, target.lon);
-            const el = document.getElementById('activeMarqueeText');
-            
-            if(dist <= 100) {
-                el.classList.add('arriving');
-                el.textContent = `即將進站：${target.name}`;
-                document.getElementById('gpsInfoOverlay').innerText = `距離 ${target.name} 約 ${Math.round(dist)} 公尺`;
-            } else {
-                el.classList.remove('arriving');
-                document.getElementById('gpsInfoOverlay').innerText = `前往：${target.name} (距離 ${Math.round(dist)} 公尺)`;
-            }
 
-            if(dist <= 20) {
-                currentStationIndex++;
-                if(currentStationIndex < route.stations.length) {
-                    speak(`下一站，${route.stations[currentStationIndex].name}`);
+            const target = route.stations[currentStationIndex];
+            const isFinal = (currentStationIndex === route.stations.length - 1);
+            const dist = getDistanceFromLatLonInMeters(lat, lon, target.lat, target.lon);
+
+            if (stationPhase === 'next') {
+                overlay.innerText = `前往：${target.name}（距離約 ${Math.round(dist)} 公尺）`;
+
+                if (dist <= ARRIVE_THRESHOLD) {
+                    stationPhase = 'arriving';
+                    minDistanceInArriving = dist;
+
+                    // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
+                    el.style.animation = 'none';
+                    el.classList.add('arriving');
+                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
+
+                    announceArrival(target, isFinal);
+                }
+            } else if (stationPhase === 'arriving') {
+                if (dist < minDistanceInArriving) minDistanceInArriving = dist;
+                overlay.innerText = `即將到站：${target.name}（距離約 ${Math.round(dist)} 公尺）`;
+
+                if (dist > minDistanceInArriving + DEPART_MARGIN) {
+                    // 判定已經離站
+                    currentStationIndex++;
+                    minDistanceInArriving = Infinity;
+                    el.classList.remove('arriving');
+
+                    if (currentStationIndex >= route.stations.length) {
+                        stationPhase = 'finished';
+                        overlay.innerText = '已抵達終點站';
+                    } else {
+                        stationPhase = 'next';
+                        const nextTarget = route.stations[currentStationIndex];
+                        const nextIsFinal = (currentStationIndex === route.stations.length - 1);
+                        announceNextStation(nextTarget, nextIsFinal);
+                    }
+
+                    // 立刻刷新跑馬燈內容，不用等下一次輪播才更新
+                    if (resetToStationMessage) resetToStationMessage();
                 }
             }
         }
@@ -526,6 +830,7 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
         }
 
+        // ---- 跑馬燈輪播：報站訊息與政令宣導共用同一顯示器，即將到站時由 checkStationDistance 強制蓋台 ----
         function runQueueLoop() {
             const route = routes[currentRouteIndex];
             let isBroadcastTurn = false;
@@ -539,39 +844,74 @@
 
                 if (!isBroadcastTurn) {
                     let stationMsg = '';
-                    if(currentStationIndex < route.stations.length) {
-                        stationMsg = `下一站：${route.stations[currentStationIndex].name}`;
+                    if (currentStationIndex < route.stations.length) {
+                        const isFinal = (currentStationIndex === route.stations.length - 1);
+                        stationMsg = isFinal
+                            ? `終點站：${route.stations[currentStationIndex].name}`
+                            : `下一站：${route.stations[currentStationIndex].name}`;
                     } else {
                         stationMsg = '本班車已行駛至終點站';
                     }
 
-                    el.classList.remove('scrolling');
                     el.style.animation = 'none';
                     el.textContent = stationMsg;
                     isBroadcastTurn = true;
-                    
-                    marqueeTimer = setTimeout(showNextMessage, 4000);
+
+                    marqueeTimer = setTimeout(showNextMessage, 5000);
                 } else {
                     let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
-                    
-                    el.textContent = broadcastMsg;
-                    el.classList.remove('scrolling');
+
                     el.style.animation = 'none';
-                    void el.offsetWidth; // 觸發重繪
+                    el.textContent = broadcastMsg;
+                    void el.offsetWidth;
+
+                    const textWidth = el.scrollWidth;
+                    const duration = textWidth / 150 + 1;
+                    const delay = 2;
+                    const totalTime = (delay + duration) * 1000;
 
                     setTimeout(() => {
                         if (!el.classList.contains('arriving')) {
-                            el.classList.add('scrolling');
+                            el.style.animation = `marqueeScroll ${duration}s linear infinite`;
+                            el.style.animationDelay = `${delay}s`;
                         }
-                    }, 3000);
+                    }, 100);
 
                     isBroadcastTurn = false;
-                    
-                    marqueeTimer = setTimeout(showNextMessage, 18000);
+                    marqueeTimer = setTimeout(showNextMessage, totalTime);
                 }
             }
+
+            // 提供外部（GPS 離站判斷）呼叫的接口：強制切回顯示站名，並立刻刷新
+            resetToStationMessage = function () {
+                isBroadcastTurn = false;
+                clearTimeout(marqueeTimer);
+                showNextMessage();
+            };
+
             showNextMessage();
         }
+
+        // ---- 固定舞台等比縮放：確保各種裝置畫面比例一致 ----
+        const STAGE_WIDTH = 1280;
+        const STAGE_HEIGHT = 720;
+
+        function fitMarqueeStage() {
+            const stage = document.getElementById('stage-marquee');
+            if (!stage) return;
+            const scale = Math.min(
+                window.innerWidth / STAGE_WIDTH,
+                window.innerHeight / STAGE_HEIGHT
+            );
+            const offsetX = (window.innerWidth - STAGE_WIDTH * scale) / 2;
+            const offsetY = (window.innerHeight - STAGE_HEIGHT * scale) / 2;
+
+            stage.style.transform = `scale(${scale})`;
+            stage.style.left = offsetX + 'px';
+            stage.style.top = offsetY + 'px';
+        }
+        window.addEventListener('resize', fitMarqueeStage);
+        window.addEventListener('orientationchange', fitMarqueeStage);
     </script>
 </body>
-</html>
+</html>>
