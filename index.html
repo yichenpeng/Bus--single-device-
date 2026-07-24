@@ -391,7 +391,7 @@
         // ---- 到站/離站狀態機 ----
         let stationPhase = 'next';           // 'next'（前往下一站） | 'arriving'（即將到站，<=200m） | 'finished'（已完成路線）
         let minDistanceInArriving = Infinity; // 進入「即將到站」後持續記錄的最短距離，用來判斷是否已經離站
-        const ARRIVE_THRESHOLD = 200;         // 公尺，<= 此值視為「即將到站」
+        const ARRIVE_THRESHOLD = 100;         // 公尺，<= 此值視為「即將到站」
         const DEPART_MARGIN = 15;             // 公尺，比最短距離拉開這麼多，視為已經離站（抓 GPS 誤差用）
 
         // ---- 語音播報中斷控制 ----
