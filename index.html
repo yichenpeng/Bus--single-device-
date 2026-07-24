@@ -24,9 +24,11 @@
 
         /* 主選單畫面 */
         .menu-container {
-            width: 100%; max-width: 500px; padding: 1.25rem;
+            width: 100%; max-width: 500px; max-height: 100vh; padding: 1.25rem;
             display: flex; flex-direction: column; gap: 1.25rem; text-align: center;
+            overflow-y: auto; box-sizing: border-box;
         }
+
         .menu-container h1 { color: #ffaa00; margin-bottom: 0.6rem; font-size: 1.75rem; }
         .menu-btn {
             padding: 1.25rem; font-size: 1.25rem; font-weight: bold; color: #fff;
