@@ -2,6 +2,8 @@
 <html lang="zh-TW">
 <head>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>公車智慧播報系統</title>
@@ -68,7 +70,27 @@
 
         .btn-primary { width: 100%; margin-top: 0.6rem; }
         .btn-danger { background-color: #dc3545; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+        .btn-edit { background-color: #ffc107; color: #000; padding: 0.4rem 0.75rem; font-size: 0.85rem; }
         .short-input { flex: none; width: 15.6rem; }
+
+        /* ---- 地圖確認彈窗（Leaflet） ---- */
+        .map-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.75); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .map-modal.active { display: flex; }
+        .map-modal-content {
+            background: #222; padding: 1rem; border-radius: 0.6rem; width: 90%; max-width: 32rem;
+            border: 1px solid #444;
+        }
+        .map-modal-content h3 { margin: 0 0 0.4rem 0; color: #ffaa00; }
+        .map-modal-hint { font-size: 0.8rem; color: #aaa; margin-bottom: 0.6rem; }
+        #mapContainer { width: 100%; height: 300px; border-radius: 0.5rem; overflow: hidden; background: #333; }
+        .map-modal-actions { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+        .map-modal-actions button { flex: 1; }
+        .map-modal-actions .btn-cancel { background-color: #6c757d; }
+        .map-modal-actions .btn-cancel:hover { background-color: #5a6268; }
+        .map-coord-readout { font-size: 0.8rem; color: #ccc; margin-top: 0.5rem; text-align: center; }
 
         /* ---- 播報執行畫面：固定 1280x720 虛擬舞台 + JS 等比縮放，確保跨裝置比例一致 ---- */
         #marquee-page { background: #000; padding: 0; justify-content: center; align-items: center; }
@@ -115,7 +137,15 @@
         }
         @keyframes blink { from { opacity: 1; } to { opacity: 0.35; } }
 
-        .gps-info-overlay { position: absolute; bottom: 20px; font-size: 22px; color: #aaa; background: rgba(0,0,0,0.8); padding: 8px 16px; border-radius: 6px; }
+        .gps-info-overlay { position: absolute; bottom: 20px; left: 20px; font-size: 22px; color: #aaa; background: rgba(0,0,0,0.8); padding: 8px 16px; border-radius: 6px; }
+
+        .gps-retry-btn {
+            position: absolute; bottom: 20px; right: 20px;
+            font-size: 20px; padding: 10px 20px;
+            background: #17a2b8; color: #fff; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold;
+        }
+        .gps-retry-btn:hover { background: #138496; }
     </style>
 </head>
 <body>
@@ -136,15 +166,15 @@
             <h2>路線管理</h2>
             <div></div>
         </div>
-        <button class="btn-primary" onclick="openPage('select-route-page'); renderRouteList();" style="margin-bottom: 15px;">📁 選擇 / 刪除現有路線</button>
-        <button class="btn-primary" onclick="openPage('create-route-page')" style="background: #007bff;">➕ 建立新路線</button>
+        <button class="btn-primary" onclick="openPage('select-route-page'); renderRouteList();" style="margin-bottom: 15px;">📁 選擇 / 編輯 / 刪除現有路線</button>
+        <button class="btn-primary" onclick="openPage('create-route-page'); initRouteEditor();" style="background: #007bff;">➕ 建立新路線</button>
     </div>
 
     <!-- 子頁面 1-1：選擇與刪除路線 -->
     <div class="page" id="select-route-page">
         <div class="back-bar">
             <button class="back-btn" onclick="closePage('select-route-page')">⬅️ 返回</button>
-            <h2>選擇或刪除路線</h2>
+            <h2>選擇、編輯或刪除路線</h2>
             <div></div>
         </div>
         <div id="route-list-container"></div>
@@ -176,7 +206,7 @@
             </div>
             <button id="addStationBtn">查詢座標並新增站點</button>
             <div id="searchStatus" class="search-status"></div>
-            <div style="font-size:0.75rem; color:#888;">💡 英文站名是語音播報要用的，Nominatim 地址查詢不會自動生成英文站名，請自行填寫（沒填會直接借用中文站名發音，會不太標準）。</div>
+            <div style="font-size:0.75rem; color:#888;">💡 英文站名是語音播報要用的，Nominatim 地址查詢不會自動生成英文站名，請自行填寫（沒填會直接借用中文站名發音，會不太標準）。查到座標後會先跳出地圖讓你確認/微調位置。</div>
         </div>
 
         <h3 style="font-size: 1rem; margin: 0.6rem 0;">📋 站點清單（可按住 ☰ 上下拖曳排序）</h3>
@@ -229,6 +259,21 @@
                     <div class="marquee-text" id="activeMarqueeText">載入中...</div>
                 </div>
                 <div class="gps-info-overlay" id="gpsInfoOverlay">GPS 偵測中... (雙擊畫面任意處返回選單)</div>
+                <button class="gps-retry-btn" onclick="event.stopPropagation(); requestLocationPermission();">📍 重新嘗試定位</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 地圖確認彈窗：查詢地址座標後，先讓使用者拖曳/點擊微調正確位置 -->
+    <div class="map-modal" id="mapModal">
+        <div class="map-modal-content">
+            <h3>📍 確認站點位置</h3>
+            <div class="map-modal-hint">拖曳地圖上的標記，或直接點擊地圖任一處，把定位點移到正確的地方</div>
+            <div id="mapContainer"></div>
+            <div class="map-coord-readout" id="mapCoordReadout">座標：--</div>
+            <div class="map-modal-actions">
+                <button class="btn-cancel" id="mapCancelBtn">取消</button>
+                <button id="mapConfirmBtn">✅ 確認使用此位置</button>
             </div>
         </div>
     </div>
@@ -260,15 +305,31 @@
             localStorage.setItem('bus_current_route', '0');
         }
 
+        // 一次性搬遷：瀏覽器裡如果還留著舊名稱「預設示範路線」（改名前存進去的），
+        // 用起訖站比對確認是同一條示範路線後，自動改名成新的預設路線名稱，不用手動刪除重建
+        (function migrateDefaultRouteName() {
+            let migrated = false;
+            routes.forEach(r => {
+                if (r.name === '預設示範路線' && r.start === DEFAULT_ROUTE.start && r.end === DEFAULT_ROUTE.end) {
+                    r.name = DEFAULT_ROUTE.name;
+                    migrated = true;
+                }
+            });
+            if (migrated) {
+                localStorage.setItem('bus_routes', JSON.stringify(routes));
+            }
+        })();
+
         let editingStations = [];
+        let editingRouteIndex = null; // null = 建立新路線；有數字則代表正在編輯 routes[] 裡的既有路線，儲存時會直接覆蓋
         let watchId = null;
         let currentStationIndex = 1;
         let marqueeTimer = null;
 
         // ---- 到站/離站狀態機 ----
-        let stationPhase = 'next';           // 'next'（前往下一站） | 'arriving'（即將到站，<=100m） | 'finished'（已完成路線）
+        let stationPhase = 'next';           // 'next'（前往下一站） | 'arriving'（即將到站，<=200m） | 'finished'（已完成路線）
         let minDistanceInArriving = Infinity; // 進入「即將到站」後持續記錄的最短距離，用來判斷是否已經離站
-        const ARRIVE_THRESHOLD = 100;         // 公尺，<= 此值視為「即將到站」
+        const ARRIVE_THRESHOLD = 200;         // 公尺，<= 此值視為「即將到站」
         const DEPART_MARGIN = 15;             // 公尺，比最短距離拉開這麼多，視為已經離站（抓 GPS 誤差用）
 
         // ---- 語音播報中斷控制 ----
@@ -283,7 +344,6 @@
         function openPage(pageId) {
             document.getElementById(pageId).classList.add('active');
             if(pageId === 'broadcast-page') renderBroadcastUI();
-            if(pageId === 'create-route-page') initRouteEditor();
         }
         function closePage(pageId) { document.getElementById(pageId).classList.remove('active'); }
 
@@ -309,9 +369,19 @@
             }
         });
 
-        function initRouteEditor() {
-            document.getElementById('newRouteName').value = '';
-            editingStations = [];
+        // 進入「建立/編輯路線」頁面。不帶參數 = 建立新路線；傳入 routeIndex = 載入既有路線來編輯
+        function initRouteEditor(routeIndex) {
+            if (routeIndex !== undefined && routeIndex !== null && routes[routeIndex]) {
+                editingRouteIndex = routeIndex;
+                const route = routes[routeIndex];
+                document.getElementById('newRouteName').value = route.name;
+                // 用 forwardStations（原始去程順序）作為編輯基礎，避免把回程對調後的順序存回去造成混亂
+                editingStations = JSON.parse(JSON.stringify(route.forwardStations || route.stations));
+            } else {
+                editingRouteIndex = null;
+                document.getElementById('newRouteName').value = '';
+                editingStations = [];
+            }
             renderEditingStations();
         }
 
@@ -340,18 +410,86 @@
 
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
-                searchStatus.textContent = `✅ 成功取得地理位置座標！`;
-
-                editingStations.push({ name: nickname, nameEn: nameEn, address: address, lat: lat, lon: lon });
+                searchStatus.textContent = `✅ 已找到座標，請在地圖上確認或微調位置`;
 
                 document.getElementById('stationNickname').value = '';
                 document.getElementById('stationNameEn').value = '';
                 document.getElementById('stationAddress').value = '';
-                renderEditingStations();
+
+                // 不直接加入清單，先跳出地圖讓使用者確認/微調正確位置
+                openMapConfirm({ name: nickname, nameEn: nameEn, address: address, lat: lat, lon: lon });
             } catch (error) {
                 searchStatus.textContent = `❌ 地圖服務連線失敗，無法取得座標。`;
                 alert('地圖服務連線失敗，請檢查網路後重試。');
             }
+        });
+
+        // ---- 地圖確認彈窗（Leaflet + OpenStreetMap） ----
+        let leafletMap = null;
+        let mapMarker = null;
+        let pendingStation = null; // 等待使用者在地圖上確認的暫存站點資料
+
+        function openMapConfirm(station) {
+            pendingStation = station;
+            document.getElementById('mapModal').classList.add('active');
+            updateCoordReadout(station.lat, station.lon);
+
+            // 地圖容器在彈窗打開前是 display:none、尺寸是 0，
+            // 要等彈窗顯示出來之後再初始化/重新計算 Leaflet 地圖大小，畫面才不會跑掉
+            setTimeout(() => {
+                if (!leafletMap) {
+                    leafletMap = L.map('mapContainer').setView([station.lat, station.lon], 17);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(leafletMap);
+
+                    mapMarker = L.marker([station.lat, station.lon], { draggable: true }).addTo(leafletMap);
+
+                    mapMarker.on('drag', (e) => {
+                        const pos = e.target.getLatLng();
+                        updateCoordReadout(pos.lat, pos.lng);
+                    });
+
+                    // 點擊地圖任一處，直接把標記移到該處
+                    leafletMap.on('click', (e) => {
+                        mapMarker.setLatLng(e.latlng);
+                        updateCoordReadout(e.latlng.lat, e.latlng.lng);
+                    });
+                } else {
+                    leafletMap.setView([station.lat, station.lon], 17);
+                    mapMarker.setLatLng([station.lat, station.lon]);
+                }
+
+                leafletMap.invalidateSize();
+            }, 50);
+        }
+
+        function updateCoordReadout(lat, lon) {
+            document.getElementById('mapCoordReadout').textContent = `座標：${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        }
+
+        function closeMapModal() {
+            document.getElementById('mapModal').classList.remove('active');
+            pendingStation = null;
+        }
+
+        document.getElementById('mapCancelBtn').addEventListener('click', closeMapModal);
+
+        document.getElementById('mapConfirmBtn').addEventListener('click', () => {
+            if (!pendingStation || !mapMarker) return;
+            const finalLatLng = mapMarker.getLatLng();
+
+            editingStations.push({
+                name: pendingStation.name,
+                nameEn: pendingStation.nameEn,
+                address: pendingStation.address,
+                lat: finalLatLng.lat,
+                lon: finalLatLng.lng
+            });
+
+            renderEditingStations();
+            closeMapModal();
         });
 
         function renderEditingStations() {
@@ -401,9 +539,10 @@
                 stations: JSON.parse(JSON.stringify(editingStations))
             };
 
-            if(routes[currentRouteIndex] && routes[currentRouteIndex].name === name) {
-                newRoute.forwardStations = JSON.parse(JSON.stringify(editingStations));
-                routes[currentRouteIndex] = newRoute;
+            if (editingRouteIndex !== null && routes[editingRouteIndex]) {
+                // 正在編輯既有路線：直接覆蓋，不會變成新的一條
+                routes[editingRouteIndex] = newRoute;
+                currentRouteIndex = editingRouteIndex;
             } else {
                 routes.push(newRoute);
                 currentRouteIndex = routes.length - 1;
@@ -412,9 +551,16 @@
             localStorage.setItem('bus_routes', JSON.stringify(routes));
             localStorage.setItem('bus_current_route', currentRouteIndex);
 
+            editingRouteIndex = null;
             alert('路線儲存成功！');
             closePage('create-route-page');
         }
+
+        // 從「選擇/刪除路線」清單點「編輯」進來：載入該路線的站點資料，供修改後覆蓋儲存
+        window.editRoute = function(idx) {
+            openPage('create-route-page');
+            initRouteEditor(idx);
+        };
 
         function renderRouteList() {
             const container = document.getElementById('route-list-container');
@@ -452,7 +598,8 @@
                             <strong>${r.name}</strong> (${currentStatusText}) ${isSelected}<br>
                             <small style="color:#aaa;">${r.stations[0].name} ➔ ${r.stations[r.stations.length - 1].name} (共 ${r.stations.length} 站) 🔽</small>
                         </div>
-                        <div>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-edit" onclick="event.stopPropagation(); editRoute(${idx})">✏️ 編輯</button>
                             <button class="btn-danger" onclick="event.stopPropagation(); deleteRoute(${idx})">刪除</button>
                         </div>
                     </div>
@@ -754,18 +901,70 @@
 
         function startGpsTracking() {
             if(!navigator.geolocation) { alert('此裝置不支援 GPS'); return; }
+            if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+
             watchId = navigator.geolocation.watchPosition(pos => {
                 const lat = pos.coords.latitude;
                 const lon = pos.coords.longitude;
                 checkStationDistance(lat, lon);
             }, err => {
-                document.getElementById('gpsInfoOverlay').innerText = 'GPS 訊號讀取中...';
-            }, { enableHighAccuracy: true });
+                const overlay = document.getElementById('gpsInfoOverlay');
+                // 依照實際錯誤代碼顯示不同原因，方便排查是權限、訊號還是逾時問題
+                switch (err.code) {
+                    case err.PERMISSION_DENIED:
+                        overlay.innerText = '❌ 你拒絕了定位權限，請按右下角按鈕或到瀏覽器設定允許本網站取得位置';
+                        break;
+                    case err.POSITION_UNAVAILABLE:
+                        overlay.innerText = '❌ 目前無法取得位置（GPS 訊號不佳或裝置不支援）';
+                        break;
+                    case err.TIMEOUT:
+                        overlay.innerText = '❌ 定位逾時，正在重新嘗試...';
+                        break;
+                    default:
+                        overlay.innerText = `❌ GPS 發生錯誤：${err.message || '未知錯誤'}`;
+                }
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 });
+        }
+
+        // 強制重新嘗試定位。瀏覽器基於安全考量，一旦使用者按過「拒絕」，
+        // JS 沒辦法再次強制彈出允許視窗；這裡能做的是：
+        // 1. 若權限狀態還「尚未決定」，重新呼叫會觸發瀏覽器彈窗
+        // 2. 若已經被封鎖，明確告訴使用者要去哪裡手動打開
+        async function requestLocationPermission() {
+            const overlay = document.getElementById('gpsInfoOverlay');
+
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                    if (status.state === 'denied') {
+                        overlay.innerText = '❌ 定位權限已被封鎖，請到瀏覽器網站設定手動允許後再試一次';
+                        alert('偵測到定位權限被封鎖了。\n\n瀏覽器基於安全考量，不允許網頁用程式強制重新彈出「允許定位」的詢問視窗。\n\n請手動打開瀏覽器設定 → 網站權限／隱私權設定 → 找到這個網址 → 把「位置」權限改成允許，再回來按一次這個按鈕。');
+                        return;
+                    }
+                } catch (e) { /* 部分瀏覽器不支援查詢，直接往下嘗試 */ }
+            }
+
+            overlay.innerText = '📍 正在重新嘗試取得定位權限...';
+
+            navigator.geolocation.getCurrentPosition(
+                pos => {
+                    overlay.innerText = '✅ 已取得定位權限，正在追蹤...';
+                    startGpsTracking();
+                },
+                err => {
+                    if (err.code === err.PERMISSION_DENIED) {
+                        overlay.innerText = '❌ 你剛剛拒絕了定位權限，請手動到瀏覽器設定裡允許後再試一次';
+                    } else {
+                        overlay.innerText = `❌ 取得定位失敗：${err.message || '未知錯誤'}`;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         }
 
         // ---- 核心：距離判斷（即將到站 / 離站換站）----
-        // next：距離 > 100m，前往中
-        // arriving：距離 <= 100m，即將到站，並持續記錄最短距離
+        // next：距離 > 200m，前往中
+        // arriving：距離 <= 200m，即將到站，並持續記錄最短距離
         // 一旦距離比最短距離明顯拉開（超過 DEPART_MARGIN），視為已離站，換下一站
         function checkStationDistance(lat, lon) {
             const route = routes[currentRouteIndex];
@@ -792,7 +991,7 @@
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.style.animation = 'none';
                     el.classList.add('arriving');
-                    el.textContent = isFinal ? `即將到達終點站：${target.name}` : `即將到站：${target.name}`;
+                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
 
                     announceArrival(target, isFinal);
                 }
@@ -866,7 +1065,7 @@
                     void el.offsetWidth;
 
                     const textWidth = el.scrollWidth;
-                    const duration = textWidth / 150 + 1;
+                    const duration = textWidth / 200 + 1;
                     const delay = 2;
                     const totalTime = (delay + duration) * 1000;
 
