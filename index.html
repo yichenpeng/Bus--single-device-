@@ -95,7 +95,7 @@
         .marquee-text {
             display: inline-block;
             white-space: nowrap;
-            font-size: 180px;
+            font-size: 150px;
             line-height: 1;
             font-weight: bold;
             color: #ffaa00;
@@ -124,7 +124,7 @@
     <div class="menu-container" id="main-menu">
         <h1>🚌 公車智慧播報系統</h1>
         <button class="menu-btn" onclick="openPage('route-menu-page')">1. 路線管理 (選擇/編輯/刪除)</button>
-        <button class="menu-btn" onclick="openPage('broadcast-page')">2. 選擇或新建政令廣播</button>
+        <button class="menu-btn" onclick="openPage('broadcast-page')">2. 選擇或新建廣播</button>
         <button class="menu-btn" onclick="openPage('voice-page')">3. 語音參數調節</button>
         <button class="menu-btn" onclick="startMarqueeMode()" style="background: #007bff;">4. 執行跑馬燈與自動報站</button>
     </div>
@@ -166,13 +166,13 @@
         <div class="input-group">
             <h3 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 1rem;">➕ 新增站點</h3>
             <div class="input-row">
-                <input type="text" id="stationNickname" placeholder="站名（中文，例如：總公司）">
+                <input type="text" id="stationNickname" placeholder="中文站名（例如：正妹的家）">
             </div>
             <div class="input-row">
-                <input type="text" id="stationNameEn" placeholder="英文站名（語音播報用，例如：Head Office）">
+                <input type="text" id="stationNameEn" placeholder="英文站名（語音播報用，例如：yichen's home）">
             </div>
             <div class="input-row">
-                <input type="text" id="stationAddress" placeholder="真實地址（例如：台北市信義路五段7號）">
+                <input type="text" id="stationAddress" placeholder="真實地址（例如：新竹市建中路）">
             </div>
             <button id="addStationBtn">查詢座標並新增站點</button>
             <div id="searchStatus" class="search-status"></div>
@@ -644,15 +644,15 @@
             const segments = isFinal ? [
                 { text: '下一站', lang: 'zh-TW', pause: 300 },
                 { text: '終點站', lang: 'zh-TW', pause: 350 },
-                { text: `${nameZh}站`, lang: 'zh-TW', pause: 450 },
+                { text: `${nameZh}`, lang: 'zh-TW', pause: 450 },
                 { text: 'next stop', lang: 'en-US', pause: 300 },
                 { text: 'the final station', lang: 'en-US', pause: 350 },
-                { text: `${nameEn} Station`, lang: 'en-US', pause: 0 }
+                { text: `${nameEn} `, lang: 'en-US', pause: 0 }
             ] : [
                 { text: '下一站', lang: 'zh-TW', pause: 300 },
-                { text: `${nameZh}站`, lang: 'zh-TW', pause: 450 },
+                { text: `${nameZh}`, lang: 'zh-TW', pause: 450 },
                 { text: 'next stop', lang: 'en-US', pause: 300 },
-                { text: `${nameEn} Station`, lang: 'en-US', pause: 0 }
+                { text: `${nameEn}`, lang: 'en-US', pause: 0 }
             ];
 
             speakSequence(segments);
@@ -665,14 +665,14 @@
 
             const segments = isFinal ? [
                 { text: '終點站', lang: 'zh-TW', pause: 300 },
-                { text: `${nameZh}站`, lang: 'zh-TW', pause: 350 },
+                { text: `${nameZh}`, lang: 'zh-TW', pause: 350 },
                 { text: '到了', lang: 'zh-TW', pause: 450 },
                 { text: 'the final station', lang: 'en-US', pause: 300 },
-                { text: `${nameEn} Station, is arriving`, lang: 'en-US', pause: 0 }
+                { text: `${nameEn}, is arriving`, lang: 'en-US', pause: 0 }
             ] : [
-                { text: `${nameZh}站`, lang: 'zh-TW', pause: 350 },
+                { text: `${nameZh}`, lang: 'zh-TW', pause: 350 },
                 { text: '到了', lang: 'zh-TW', pause: 450 },
-                { text: `${nameEn} Station, is arriving`, lang: 'en-US', pause: 0 }
+                { text: `${nameEn}, is arriving`, lang: 'en-US', pause: 0 }
             ];
 
             speakSequence(segments);
@@ -680,7 +680,7 @@
 
         function testAnnouncement() {
             updateVoiceSettings();
-            announceNextStation({ name: '總公司', nameEn: 'Head Office' }, false);
+            announceNextStation({ name: '中正大學', nameEn: ' National Chung Cheng University' }, false);
         }
 
         function startMarqueeMode() {
@@ -792,7 +792,7 @@
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.style.animation = 'none';
                     el.classList.add('arriving');
-                    el.textContent = isFinal ? `🚏 終點站即將到站：${target.name}` : `🚏 即將到站：${target.name}`;
+                    el.textContent = isFinal ? `即將到達終點站：${target.name}` : `即將到站：${target.name}`;
 
                     announceArrival(target, isFinal);
                 }
@@ -914,4 +914,4 @@
         window.addEventListener('orientationchange', fitMarqueeStage);
     </script>
 </body>
-</html>>
+</html>
