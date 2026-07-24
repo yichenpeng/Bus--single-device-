@@ -171,7 +171,7 @@
         <button class="menu-btn" onclick="openPage('route-menu-page')">1. 路線管理 (選擇/編輯/刪除)</button>
         <button class="menu-btn" onclick="openPage('broadcast-page')">2. 選擇或新建廣播</button>
         <button class="menu-btn" onclick="openPage('voice-page')">3. 語音參數調節</button>
-        <button class="menu-btn" onclick="startMarqueeMode()" style="background: #007bff;">4. 執行跑馬燈與自動報站</button>
+        <button class="menu-btn" onclick="requestFullscreenAndStart();" style="background: #007bff;">4. 執行跑馬燈與自動報站</button>
     </div>
 
     <!-- 路線管理主選單 -->
@@ -843,6 +843,21 @@
         function testAnnouncement() {
             updateVoiceSettings();
             announceNextStation({ name: '中正大學', nameEn: ' National Chung Cheng University' }, false);
+        }
+
+                    
+                    function requestFullscreenAndStart() {
+            const elem = document.documentElement;
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen().catch(err => {
+                    console.log("全螢幕請求被拒絕或失敗：", err);
+                });
+            } else if (elem.webkitRequestFullscreen) { /* Safari */
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { /* IE11 / 舊版 Edge */
+                elem.msRequestFullscreen();
+            }
+            startMarqueeMode();
         }
 
         function startMarqueeMode() {
