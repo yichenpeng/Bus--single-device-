@@ -156,10 +156,16 @@
 
 
         .marquee-text.arriving {
-            color: #ff3300;
-            text-shadow: 0 0 25px rgba(255, 51, 0, 0.9);
-            animation: blink 0.6s infinite alternate !important;
-        }
+    color: #ff3300;
+    text-shadow: 0 0 25px rgba(255, 51, 0, 0.9);
+}
+.marquee-text.arriving:not(.scrolling) {
+    animation: blink 0.6s infinite alternate;
+}
+.marquee-text.arriving.scrolling {
+    animation: marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards,
+               blink 0.6s infinite alternate;
+}
         @keyframes blink { from { opacity: 1; } to { opacity: 0.35; } }
 
                 .gps-info-overlay { 
@@ -1077,11 +1083,23 @@
                     minDistanceInArriving = dist;
 
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
-                    el.style.animation = 'none';
-                    el.classList.add('arriving');
-                    el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
+                    el.classList.remove('scrolling');
+el.style.animation = '';
+el.classList.add('arriving');
+el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
 
-                    announceArrival(target, isFinal);
+void el.offsetWidth;
+const textWidth = el.scrollWidth;
+const containerWidth = el.parentElement.clientWidth;
+if (textWidth > containerWidth) {
+    const distance = containerWidth - textWidth;
+    const duration = (textWidth - containerWidth) / 150 + 1;
+    el.style.setProperty('--scroll-end-distance', distance + 'px');
+    el.style.setProperty('--scroll-duration', duration + 's');
+    el.classList.add('scrolling');
+}
+
+announceArrival(target, isFinal);
                 }
             } else if (stationPhase === 'arriving') {
                 if (dist < minDistanceInArriving) minDistanceInArriving = dist;
