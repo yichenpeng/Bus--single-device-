@@ -148,11 +148,12 @@
             100% { transform: translateX(-100%); }
         }
 
-                /* 站名字數超過 8.5 個字時的重複循環滾動動畫 */
-        @keyframes marqueeRepeatScroll {
+            /* 站名字數超過 8.5 個字時的單次滾動動畫：停在最後一個字顯現（貼齊容器右側） */
+        @keyframes marqueeStopAtEnd {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
+            100% { transform: translateX(var(--scroll-end-distance)); }
         }
+
 
         .marquee-text.arriving {
     color: #ff3300;
