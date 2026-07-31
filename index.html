@@ -412,8 +412,7 @@ let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能�
 
         // ---- 語音播報中斷控制 ----
         let speechAborted = false;
-        let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能立刻刷新跑馬燈文字
-
+        
         document.getElementById('speechRate').value = voiceSettings.rate;
         document.getElementById('speedVal').innerText = voiceSettings.rate;
         document.getElementById('speechPitch').value = voiceSettings.pitch;
