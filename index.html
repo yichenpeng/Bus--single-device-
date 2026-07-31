@@ -1106,7 +1106,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     const containerWidth = el.parentElement.clientWidth;
                     if (textWidth > containerWidth) {
                         const distance = containerWidth - textWidth;
-                        const duration = (textWidth - containerWidth) / 150 + 1;
+                        const duration = (textWidth - containerWidth) / 200 + 1;
                         el.style.setProperty('--scroll-end-distance', distance + 'px');
                         el.style.setProperty('--scroll-duration', duration + 's');
                         el.classList.add('scrolling');
