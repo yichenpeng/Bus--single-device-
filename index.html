@@ -797,11 +797,13 @@ document.getElementById('volumeVal').innerText = voiceSettings.volume;
         }
 
         function updateVoiceSettings() {
-            voiceSettings.rate = parseFloat(document.getElementById('speechRate').value);
-            voiceSettings.pitch = parseFloat(document.getElementById('speechPitch').value);
-            document.getElementById('speedVal').innerText = voiceSettings.rate;
-            document.getElementById('pitchVal').innerText = voiceSettings.pitch;
-            localStorage.setItem('bus_voice', JSON.stringify(voiceSettings));
+    voiceSettings.rate = parseFloat(document.getElementById('speechRate').value);
+    voiceSettings.pitch = parseFloat(document.getElementById('speechPitch').value);
+    voiceSettings.volume = parseFloat(document.getElementById('speechVolume').value); // 新增
+    document.getElementById('speedVal').innerText = voiceSettings.rate;
+    document.getElementById('pitchVal').innerText = voiceSettings.pitch;
+    document.getElementById('volumeVal').innerText = voiceSettings.volume; // 新增
+    localStorage.setItem('bus_voice', JSON.stringify(voiceSettings));
         }
 
         // ---- 數字逐字唸法：把中文語音裡的數字拆成逐字念（例如 6767 -> 六七六七，而不是六千七百六十七） ----
