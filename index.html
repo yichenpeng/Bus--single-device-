@@ -1101,12 +1101,11 @@ void el.offsetWidth;
 const textWidth = el.scrollWidth;
 const containerWidth = el.parentElement.clientWidth;
 if (textWidth > containerWidth) {
-    const distance = containerWidth - textWidth;
-    const duration = (textWidth - containerWidth) / 150 + 1;
-    el.style.setProperty('--scroll-end-distance', distance + 'px');
+    const duration = textWidth / 200 + 1; // 依照文字長度計算流暢的速度
     el.style.setProperty('--scroll-duration', duration + 's');
     el.classList.add('scrolling');
 }
+
 
 announceArrival(target, isFinal);
                 }
