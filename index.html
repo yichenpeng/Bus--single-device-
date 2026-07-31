@@ -1134,15 +1134,18 @@ announceArrival(target, isFinal);
                 if (dist < minDistanceInArriving) minDistanceInArriving = dist;
                 overlay.innerText = `即將到站：${target.name}（距離約 ${Math.round(dist)} 公尺）`;
 
-                if (dist > minDistanceInArriving + DEPART_MARGIN) {
+                                if (dist > minDistanceInArriving + DEPART_MARGIN) {
                     // 判定已經離站
                     currentStationIndex++;
                     minDistanceInArriving = Infinity;
                     el.classList.remove('arriving');
 
                     if (currentStationIndex >= route.stations.length) {
+                        // 已經超過最後一站（代表正式離開了終點站）
                         stationPhase = 'finished';
-                        overlay.innerText = '已抵達終點站';
+                        overlay.innerText = '本車已過終點站';
+                        // 這裡可以選擇是否播報語音（例如：「本班車已行駛至終點站，謝謝搭乘」）
+                        speak('本班車已行駛至終點站，謝謝搭乘');
                     } else {
                         stationPhase = 'next';
                         const nextTarget = route.stations[currentStationIndex];
@@ -1153,6 +1156,7 @@ announceArrival(target, isFinal);
                     // 立刻刷新跑馬燈內容，不用等下一次輪播才更新
                     if (resetToStationMessage) resetToStationMessage();
                 }
+
             }
         }
 
