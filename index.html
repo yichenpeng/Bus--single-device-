@@ -1095,6 +1095,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     minDistanceInArriving = dist;
 
                                         // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
+                    // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.classList.remove('scrolling');
                     el.style.animation = '';
                     el.classList.add('arriving');
@@ -1109,7 +1110,15 @@ utterance.volume = voiceSettings.volume; // 新增
                         el.style.setProperty('--scroll-end-distance', distance + 'px');
                         el.style.setProperty('--scroll-duration', duration + 's');
                         el.classList.add('scrolling');
-                        el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                        
+                        // 一開始先在原地閃爍停留 2 秒，再開始滾動
+                        el.style.animation = 'blink 0.6s infinite alternate';
+                        
+                        setTimeout(() => {
+                            if (el.classList.contains('arriving')) {
+                                el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                            }
+                        }, 2000);
 
                         if (!el._hasAnimationEndListener) {
                             el._hasAnimationEndListener = true;
@@ -1124,7 +1133,14 @@ utterance.volume = voiceSettings.volume; // 新增
                                         if (el.classList.contains('arriving')) {
                                             el.style.transform = 'none';
                                             void el.offsetWidth;
-                                            el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                                            
+                                            // 再次循環時，同樣先在原地停留 2 秒再開始滾
+                                            el.style.animation = 'blink 0.6s infinite alternate';
+                                            setTimeout(() => {
+                                                if (el.classList.contains('arriving')) {
+                                                    el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                                                }
+                                            }, 2000);
                                         }
                                     }, 2000);
                                 }
@@ -1135,6 +1151,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     }
 
                     announceArrival(target, isFinal);
+
 
 
                 }
