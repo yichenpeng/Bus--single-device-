@@ -1094,7 +1094,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     stationPhase = 'arriving';
                     minDistanceInArriving = dist;
 
-                    // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
+                                        // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.classList.remove('scrolling');
                     el.style.animation = '';
                     el.classList.add('arriving');
@@ -1115,8 +1115,8 @@ utterance.volume = voiceSettings.volume; // 新增
                             el._hasAnimationEndListener = true;
                             el.addEventListener('animationend', (e) => {
                                 if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
-                                    // 滾到底後暫時拔掉動畫，並固定在最右側
-                                    el.style.animation = 'none';
+                                    // 滾到底後拔掉滾動動畫，但保留 transform 固定在右側，同時讓 blink 繼續閃爍
+                                    el.style.animation = 'blink 0.6s infinite alternate';
                                     el.style.transform = `translateX(${distance}px)`;
 
                                     // 停留 2 秒後，重置並重新從頭滾動
@@ -1135,6 +1135,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     }
 
                     announceArrival(target, isFinal);
+
 
                 }
             } else if (stationPhase === 'arriving') {
