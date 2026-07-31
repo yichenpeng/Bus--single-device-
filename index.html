@@ -1103,10 +1103,29 @@ void el.offsetWidth;
 const textWidth = el.scrollWidth;
 const containerWidth = el.parentElement.clientWidth;
 if (textWidth > containerWidth) {
-    const duration = textWidth / 200 + 1; // 依照文字長度計算流暢的速度
+    const distance = containerWidth - textWidth;
+    const duration = (textWidth - containerWidth) / 150 + 1;
+    el.style.setProperty('--scroll-end-distance', distance + 'px');
     el.style.setProperty('--scroll-duration', duration + 's');
     el.classList.add('scrolling');
+
+    // 監聽單次滾動結束，停在最右邊休息 2 秒後，自動重新播放下一輪
+    if (!el._hasAnimationEndListener) {
+        el._hasAnimationEndListener = true;
+        el.addEventListener('animationend', (e) => {
+            if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
+                el.style.animation = 'none';
+                void el.offsetWidth; // 重新重置動畫
+                setTimeout(() => {
+                    if (el.classList.contains('arriving')) {
+                        el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                    }
+                }, 2000); // 停在最右邊 2 秒後再重新開始滾
+            }
+        });
+    }
 }
+
 
 
 announceArrival(target, isFinal);
