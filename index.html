@@ -1180,9 +1180,12 @@ announceArrival(target, isFinal);
                     return;
                 }
 
-                                                if (!isBroadcastTurn) {
+                if (!isBroadcastTurn) {
                     let stationMsg = '';
-                    if (currentStationIndex < route.stations.length) {
+                    if (stationPhase === 'finished') {
+                        // 只有當整趟行程真正結束（離開終點站後）才顯示這行
+                        stationMsg = '本班車已行駛至終點站';
+                    } else if (currentStationIndex < route.stations.length) {
                         const isFinal = (currentStationIndex === route.stations.length - 1);
                         stationMsg = isFinal
                             ? `終點站：${route.stations[currentStationIndex].name}`
@@ -1190,6 +1193,7 @@ announceArrival(target, isFinal);
                     } else {
                         stationMsg = '本班車已行駛至終點站';
                     }
+
 
                     el.style.animation = 'none';
                     el.textContent = stationMsg;
