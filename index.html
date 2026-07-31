@@ -820,7 +820,8 @@ document.getElementById('volumeVal').innerText = voiceSettings.volume;
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(digitsToChineseDigits(text));
             utterance.rate = voiceSettings.rate;
-            utterance.pitch = voiceSettings.pitch;
+utterance.pitch = voiceSettings.pitch;
+utterance.volume = voiceSettings.volume; // 新增
             utterance.lang = 'zh-TW';
             if(callback) utterance.onend = callback;
             window.speechSynthesis.speak(utterance);
