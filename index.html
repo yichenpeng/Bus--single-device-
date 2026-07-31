@@ -1096,40 +1096,46 @@ utterance.volume = voiceSettings.volume; // 新增
 
                     // 即將到站：最高優先權，強制蓋台顯示 + 閃爍
                     el.classList.remove('scrolling');
-el.style.animation = '';
-el.classList.add('arriving');
-el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
+                    el.style.animation = '';
+                    el.classList.add('arriving');
+                    el.textContent = isFinal ? `終點站即將到站：${target.name}` : `即將到站：${target.name}`;
 
-void el.offsetWidth;
-const textWidth = el.scrollWidth;
-const containerWidth = el.parentElement.clientWidth;
-if (textWidth > containerWidth) {
-    const distance = containerWidth - textWidth;
-    const duration = (textWidth - containerWidth) / 150 + 1;
-    el.style.setProperty('--scroll-end-distance', distance + 'px');
-    el.style.setProperty('--scroll-duration', duration + 's');
-    el.classList.add('scrolling');
-
-    // 監聽單次滾動結束，停在最右邊休息 2 秒後，自動重新播放下一輪
-    if (!el._hasAnimationEndListener) {
-        el._hasAnimationEndListener = true;
-        el.addEventListener('animationend', (e) => {
-            if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
-                el.style.animation = 'none';
-                void el.offsetWidth; // 重新重置動畫
-                setTimeout(() => {
-                    if (el.classList.contains('arriving')) {
+                    void el.offsetWidth;
+                    const textWidth = el.scrollWidth;
+                    const containerWidth = el.parentElement.clientWidth;
+                    if (textWidth > containerWidth) {
+                        const distance = containerWidth - textWidth;
+                        const duration = (textWidth - containerWidth) / 150 + 1;
+                        el.style.setProperty('--scroll-end-distance', distance + 'px');
+                        el.style.setProperty('--scroll-duration', duration + 's');
+                        el.classList.add('scrolling');
                         el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+
+                        if (!el._hasAnimationEndListener) {
+                            el._hasAnimationEndListener = true;
+                            el.addEventListener('animationend', (e) => {
+                                if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
+                                    // 滾到底後暫時拔掉動畫，並固定在最右側
+                                    el.style.animation = 'none';
+                                    el.style.transform = `translateX(${distance}px)`;
+
+                                    // 停留 2 秒後，重置並重新從頭滾動
+                                    setTimeout(() => {
+                                        if (el.classList.contains('arriving')) {
+                                            el.style.transform = 'none';
+                                            void el.offsetWidth;
+                                            el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                                        }
+                                    }, 2000);
+                                }
+                            });
+                        }
+                    } else {
+                        el.style.animation = 'blink 0.6s infinite alternate';
                     }
-                }, 2000); // 停在最右邊 2 秒後再重新開始滾
-            }
-        });
-    }
-}
 
+                    announceArrival(target, isFinal);
 
-
-announceArrival(target, isFinal);
                 }
             } else if (stationPhase === 'arriving') {
                 if (dist < minDistanceInArriving) minDistanceInArriving = dist;
