@@ -338,8 +338,11 @@
         let routes = (storedRoutes && storedRoutes.length > 0) ? storedRoutes : [JSON.parse(JSON.stringify(DEFAULT_ROUTE))];
         let currentRouteIndex = parseInt(localStorage.getItem('bus_current_route')) || 0;
         let broadcasts = JSON.parse(localStorage.getItem('bus_broadcasts')) || ['請隨身攜帶好個人隨身行李', '上下車請刷卡，祝您旅途愉快'];
-        let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0 };
+        let voiceSettings = JSON.parse(localStorage.getItem('bus_voice')) || { rate: 1.0, pitch: 1.0, volume: 1.0 };
+if (voiceSettings.volume === undefined) voiceSettings.volume = 1.0; // 相容舊資料
 
+document.getElementById('speechVolume').value = voiceSettings.volume;
+document.getElementById('volumeVal').innerText = voiceSettings.volume;
         // 若是第一次開啟（沒有任何已儲存的路線），把預設路線直接存進 localStorage，
         // 這樣重新整理頁面、或去「路線管理」清單裡看，也會看到這條路線
         if (!storedRoutes || storedRoutes.length === 0) {
