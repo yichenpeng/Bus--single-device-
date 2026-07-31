@@ -351,6 +351,7 @@ document.getElementById('volumeVal').innerText = voiceSettings.volume;
             localStorage.setItem('bus_routes', JSON.stringify(routes));
             localStorage.setItem('bus_current_route', '0');
         }
+let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能立刻刷新跑馬燈文字
 
         // 一次性搬遷：瀏覽器裡如果還留著舊名稱「預設示範路線」（改名前存進去的），
         // 用起訖站比對確認是同一條示範路線後，自動改名成新的預設路線名稱，不用手動刪除重建
