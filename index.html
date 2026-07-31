@@ -163,9 +163,10 @@
     animation: blink 0.6s infinite alternate;
 }
 .marquee-text.arriving.scrolling {
-    animation: marqueeRepeatScroll var(--scroll-duration, 6s) linear infinite,
+    animation: marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards,
                blink 0.6s infinite alternate;
 }
+
 
         @keyframes blink { from { opacity: 1; } to { opacity: 0.35; } }
 
