@@ -849,6 +849,11 @@ function sliderPercent(inputEl) {
     return Math.round(((val - min) / (max - min)) * 100);
 }
 
+function updateSliderFill(inputEl) {
+    const percent = sliderPercent(inputEl);
+    inputEl.style.background = `linear-gradient(to right, #ffaa00 0%, #ffaa00 ${percent}%, #444 ${percent}%, #444 100%)`;
+}
+
 function updateVoiceSettings() {
     const rateEl = document.getElementById('speechRate');
     const pitchEl = document.getElementById('speechPitch');
