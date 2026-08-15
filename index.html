@@ -387,7 +387,7 @@ input[type="range"]::-moz-range-track {
 if (voiceSettings.volume === undefined) voiceSettings.volume = 1.0; // 相容舊資料
 document.getElementById('speechVolume').value = voiceSettings.volume;
 document.getElementById('volumeVal').innerText = sliderPercent(document.getElementById('speechVolume')) + '%';
-
+updateSliderFill(document.getElementById('speechVolume'));
         // 若是第一次開啟（沒有任何已儲存的路線），把預設路線直接存進 localStorage，
         // 這樣重新整理頁面、或去「路線管理」清單裡看，也會看到這條路線
         if (!storedRoutes || storedRoutes.length === 0) {
