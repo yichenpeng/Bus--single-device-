@@ -798,15 +798,29 @@ let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能�
             renderBroadcastUI();
         }
 
-        function updateVoiceSettings() {
-    voiceSettings.rate = parseFloat(document.getElementById('speechRate').value);
-    voiceSettings.pitch = parseFloat(document.getElementById('speechPitch').value);
-    voiceSettings.volume = parseFloat(document.getElementById('speechVolume').value); // 新增
-    document.getElementById('speedVal').innerText = voiceSettings.rate;
-    document.getElementById('pitchVal').innerText = voiceSettings.pitch;
-    document.getElementById('volumeVal').innerText = voiceSettings.volume; // 新增
+        // 依照滑桿自己的 min/max，把目前 value 換算成 0~100% 顯示
+function sliderPercent(inputEl) {
+    const min = parseFloat(inputEl.min);
+    const max = parseFloat(inputEl.max);
+    const val = parseFloat(inputEl.value);
+    return Math.round(((val - min) / (max - min)) * 100);
+}
+
+function updateVoiceSettings() {
+    const rateEl = document.getElementById('speechRate');
+    const pitchEl = document.getElementById('speechPitch');
+    const volumeEl = document.getElementById('speechVolume');
+
+    voiceSettings.rate = parseFloat(rateEl.value);
+    voiceSettings.pitch = parseFloat(pitchEl.value);
+    voiceSettings.volume = parseFloat(volumeEl.value);
+
+    document.getElementById('speedVal').innerText = sliderPercent(rateEl) + '%';
+    document.getElementById('pitchVal').innerText = sliderPercent(pitchEl) + '%';
+    document.getElementById('volumeVal').innerText = sliderPercent(volumeEl) + '%';
+
     localStorage.setItem('bus_voice', JSON.stringify(voiceSettings));
-        }
+}
 
         // ---- 數字逐字唸法：把中文語音裡的數字拆成逐字念（例如 6767 -> 六七六七，而不是六千七百六十七） ----
         // 常見於路線編號、站名編號，中文 TTS 預設會把連續數字唸成完整數值，這裡把每個數字改成對應中文字，
