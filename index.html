@@ -1191,28 +1191,24 @@ utterance.volume = voiceSettings.volume; // 新增
                         if (!el._hasAnimationEndListener) {
                             el._hasAnimationEndListener = true;
                             el.addEventListener('animationend', (e) => {
-                                if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
-                                    // 滾到底後拔掉滾動動畫，但保留 transform 固定在右側，同時讓 blink 繼續閃爍
-                                    el.style.animation = 'blink 0.6s infinite alternate';
-                                    el.style.transform = `translateX(${distance}px)`;
+    if (e.animationName === 'marqueeStopAtEnd' && el.classList.contains('arriving')) {
+        el.style.animation = 'blink 0.6s infinite alternate';
+        el.style.transform = `translateX(${distance}px)`;
 
-                                    // 停留 2 秒後，重置並重新從頭滾動
-                                    setTimeout(() => {
-                                        if (el.classList.contains('arriving')) {
-                                            el.style.transform = 'none';
-                                            void el.offsetWidth;
-                                            
-                                            // 再次循環時，同樣先在原地停留 2 秒再開始滾
-                                            el.style.animation = 'blink 0.6s infinite alternate';
-                                            setTimeout(() => {
-                                                if (el.classList.contains('arriving')) {
-                                                    el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
-                                                }
-                                            }, 2000);
-                                        }
-                                    }, 2000);
-                                }
-                            });
+        setTimeout(() => {
+            el.style.transform = 'none';   // 不管有沒有離站，都強制歸零
+            if (el.classList.contains('arriving')) {
+                void el.offsetWidth;
+                el.style.animation = 'blink 0.6s infinite alternate';
+                setTimeout(() => {
+                    if (el.classList.contains('arriving')) {
+                        el.style.animation = `marqueeStopAtEnd var(--scroll-duration, 6s) linear forwards, blink 0.6s infinite alternate`;
+                    }
+                }, 2000);
+            }
+        }, 2000);
+    }
+});
                         }
                     } else {
                         el.style.animation = 'blink 0.6s infinite alternate';
