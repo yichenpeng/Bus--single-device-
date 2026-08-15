@@ -49,7 +49,46 @@
         /* 輸入與清單樣式 */
         .input-group { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 0.9rem; background: #222; padding: 0.9rem; border-radius: 0.4rem; border: 1px solid #444; }
         .input-row { display: flex; gap: 0.6rem; }
-        input, select { flex: 1; padding: 0.6rem; font-size: 1rem; background: #111; color: #fff; border: 1px solid #444; border-radius: 0.25rem; }
+        input:not([type="range"]), select { flex: 1; padding: 0.6rem; font-size: 1rem; background: #111; color: #fff; border: 1px solid #444; border-radius: 0.25rem; }
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    padding: 0;
+    margin: 0.6rem 0;
+    background: #444;
+    border: none;
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffaa00;
+    cursor: pointer;
+    border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffaa00;
+    cursor: pointer;
+    border: none;
+}
+
+input[type="range"]::-moz-range-track {
+    background: #444;
+    height: 6px;
+    border-radius: 3px;
+}
         .route-name-container { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; background: #222; padding: 0.7rem; border-radius: 0.4rem; border: 1px solid #444; }
         .route-name-container label { font-size: 0.95rem; color: #ffaa00; white-space: nowrap; font-weight: bold; }
         .route-name-container input { flex: none; width: 15.6rem; }
