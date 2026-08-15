@@ -58,7 +58,6 @@ input[type="range"] {
     height: 6px;
     padding: 0;
     margin: 0.6rem 0;
-    background: #444;
     border: none;
     border-radius: 3px;
     outline: none;
@@ -82,6 +81,12 @@ input[type="range"]::-moz-range-thumb {
     background: #ffaa00;
     cursor: pointer;
     border: none;
+}
+
+input[type="range"]::-moz-range-progress {
+    background: #ffaa00;
+    height: 6px;
+    border-radius: 3px;
 }
 
 input[type="range"]::-moz-range-track {
