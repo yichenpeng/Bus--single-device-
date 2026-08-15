@@ -1235,6 +1235,7 @@ utterance.volume = voiceSettings.volume; // 新增
 
 
                     el.style.animation = 'none';
+                    el.style.transform = 'none';   
                     el.textContent = stationMsg;
                     isBroadcastTurn = true;
 
@@ -1262,6 +1263,7 @@ utterance.volume = voiceSettings.volume; // 新增
                     let broadcastMsg = broadcasts.length > 0 ? broadcasts.join('　　　　') : '祝您旅途愉快';
 
                     el.style.animation = 'none';
+                    el.style.transform = 'none';
                     el.textContent = broadcastMsg;
                     void el.offsetWidth;
 
