@@ -414,9 +414,9 @@ let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能�
         let speechAborted = false;
         
         document.getElementById('speechRate').value = voiceSettings.rate;
-        document.getElementById('speedVal').innerText = voiceSettings.rate;
+        document.getElementById('speedVal').innerText = sliderPercent(document.getElementById('speechRate')) + '%';
         document.getElementById('speechPitch').value = voiceSettings.pitch;
-        document.getElementById('pitchVal').innerText = voiceSettings.pitch;
+        document.getElementById('pitchVal').innerText = sliderPercent(document.getElementById('speechPitch')) + '%';
 
         function openPage(pageId) {
             document.getElementById(pageId).classList.add('active');
