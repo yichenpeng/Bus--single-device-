@@ -867,6 +867,10 @@ function updateVoiceSettings() {
     document.getElementById('pitchVal').innerText = sliderPercent(pitchEl) + '%';
     document.getElementById('volumeVal').innerText = sliderPercent(volumeEl) + '%';
 
+    updateSliderFill(rateEl);
+    updateSliderFill(pitchEl);
+    updateSliderFill(volumeEl);
+
     localStorage.setItem('bus_voice', JSON.stringify(voiceSettings));
 }
 
