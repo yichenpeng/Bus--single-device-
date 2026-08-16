@@ -240,8 +240,7 @@ input[type="range"]::-moz-range-track {
         <button class="menu-btn" onclick="requestFullscreenAndStart();" style="background: #007bff;">執行跑馬燈與自動報站</button>
      
     </div>
-
-    <!-- 路線管理主選單 -->
+<!-- 路線管理主選單 -->
     <div class="page" id="route-menu-page">
         <div class="back-bar">
             <button class="back-btn" onclick="closePage('route-menu-page')">⬅️ 返回選單</button>
@@ -250,6 +249,10 @@ input[type="range"]::-moz-range-track {
         </div>
         <button class="btn-primary" onclick="openPage('select-route-page'); renderRouteList();" style="margin-bottom: 15px;">📁 選擇 / 編輯 / 刪除現有路線</button>
         <button class="btn-primary" onclick="openPage('create-route-page'); initRouteEditor();" style="background: #007bff;">➕ 建立新路線</button>
+
+        <button class="btn-primary" onclick="openExportModal()" style="background: #6c757d; margin-top: 15px;">⬇️ 匯出路線</button>
+        <button class="btn-primary" onclick="document.getElementById('importFileInput').click()" style="background: #6c757d;">⬆️ 匯入路線</button>
+        <input type="file" id="importFileInput" accept="application/json,.json" style="display:none" onchange="handleImportFile(event)">
     </div>
 
     <!-- 子頁面 1-1：選擇與刪除路線 -->
@@ -351,7 +354,7 @@ input[type="range"]::-moz-range-track {
         </div>
     </div>
 
-    <!-- 地圖確認彈窗：查詢地址座標後，先讓使用者拖曳/點擊微調正確位置 -->
+   <!-- 地圖確認彈窗：查詢地址座標後，先讓使用者拖曳/點擊微調正確位置 -->
     <div class="map-modal" id="mapModal">
         <div class="map-modal-content">
             <h3>📍 確認站點位置</h3>
@@ -361,6 +364,27 @@ input[type="range"]::-moz-range-track {
             <div class="map-modal-actions">
                 <button class="btn-cancel" id="mapCancelBtn">取消</button>
                 <button id="mapConfirmBtn">✅ 確認使用此位置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 匯出路線選擇彈窗：勾選要匯出哪幾條路線 -->
+    <div class="map-modal" id="exportModal">
+        <div class="map-modal-content">
+            <h3>⬇️ 選擇要匯出的路線</h3>
+            <div class="map-modal-hint">勾選要匯出的路線，確認後會下載成一個 JSON 檔案</div>
+
+            <div style="margin-bottom: 10px; display:flex; gap:10px;">
+                <button onclick="toggleAllExportCheckboxes(true)" style="flex:1; background:#6c757d; font-size:0.85rem; padding:0.5rem;">全選</button>
+                <button onclick="toggleAllExportCheckboxes(false)" style="flex:1; background:#6c757d; font-size:0.85rem; padding:0.5rem;">全不選</button>
+            </div>
+
+            <div id="exportRouteCheckboxList" style="max-height: 300px; overflow-y: auto; background: #111; padding: 10px; border: 1px solid #333; border-radius: 0.4rem;">
+            </div>
+
+            <div class="map-modal-actions">
+                <button class="btn-cancel" id="exportCancelBtn">取消</button>
+                <button id="exportConfirmBtn">✅ 匯出選取的路線</button>
             </div>
         </div>
     </div>
@@ -828,7 +852,140 @@ updateSliderFill(document.getElementById('speechPitch'));
                 list.appendChild(li);
             });
         }
+        // ---- 打開匯出選擇彈窗，列出所有路線讓使用者勾選 ----
+function openExportModal() {
+    if (routes.length === 0) {
+        alert('目前沒有任何路線可以匯出！');
+        return;
+    }
 
+    const listEl = document.getElementById('exportRouteCheckboxList');
+    listEl.innerHTML = '';
+
+    routes.forEach((r, idx) => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid #222; cursor:pointer;';
+        label.innerHTML = `
+            <input type="checkbox" class="export-route-checkbox" data-idx="${idx}" checked style="width:18px; height:18px; flex:none;">
+            <span style="flex:1;">
+                <strong>${r.name}</strong>
+                <div style="font-size:0.8rem; color:#aaa;">${r.stations[0].name} ➔ ${r.stations[r.stations.length - 1].name}（共 ${r.stations.length} 站）</div>
+            </span>
+        `;
+        listEl.appendChild(label);
+    });
+
+    document.getElementById('exportModal').classList.add('active');
+}
+
+function closeExportModal() {
+    document.getElementById('exportModal').classList.remove('active');
+}
+
+function toggleAllExportCheckboxes(checked) {
+    document.querySelectorAll('.export-route-checkbox').forEach(cb => cb.checked = checked);
+}
+
+document.getElementById('exportCancelBtn').addEventListener('click', closeExportModal);
+
+document.getElementById('exportConfirmBtn').addEventListener('click', () => {
+    const checkedBoxes = document.querySelectorAll('.export-route-checkbox:checked');
+
+    if (checkedBoxes.length === 0) {
+        alert('請至少勾選一條路線！');
+        return;
+    }
+
+    const selectedRoutes = Array.from(checkedBoxes).map(cb => routes[parseInt(cb.dataset.idx)]);
+
+    const exportData = {
+        type: 'bus_routes_backup',
+        exportedAt: new Date().toISOString(),
+        routes: selectedRoutes
+    };
+
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    a.download = `公車路線備份_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    closeExportModal();
+});
+
+// ---- 匯入路線：讀取使用者選擇的 JSON 檔案 ----
+function handleImportFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const parsed = JSON.parse(e.target.result);
+
+            // 相容兩種格式：完整匯出檔（有 routes 欄位），或直接是一個路線陣列
+            const importedRoutes = Array.isArray(parsed) ? parsed : parsed.routes;
+
+            if (!Array.isArray(importedRoutes) || importedRoutes.length === 0) {
+                alert('❌ 這個檔案裡沒有找到有效的路線資料，請確認檔案內容是否正確。');
+                return;
+            }
+
+            // 簡單驗證每條路線的必要欄位是否存在
+            const isValid = importedRoutes.every(r =>
+                r && typeof r.name === 'string' && Array.isArray(r.stations) && r.stations.length >= 2
+            );
+            if (!isValid) {
+                alert('❌ 檔案裡有路線資料格式不正確（缺少路線名稱或站點），已取消匯入。');
+                return;
+            }
+
+            const choice = confirm(
+                `找到 ${importedRoutes.length} 條路線。\n\n` +
+                `點「確定」＝合併加入現有路線（保留原本的路線）\n` +
+                `點「取消」＝完全覆蓋現有路線（原本的路線會被清空）`
+            );
+
+            if (choice) {
+                // 合併：確保每條匯入路線都有 forwardStations，並直接加到現有清單後面
+                importedRoutes.forEach(r => {
+                    if (!r.forwardStations) {
+                        r.forwardStations = JSON.parse(JSON.stringify(r.stations));
+                    }
+                });
+                routes = routes.concat(importedRoutes);
+            } else {
+                importedRoutes.forEach(r => {
+                    if (!r.forwardStations) {
+                        r.forwardStations = JSON.parse(JSON.stringify(r.stations));
+                    }
+                });
+                routes = importedRoutes;
+                currentRouteIndex = 0;
+            }
+
+            localStorage.setItem('bus_routes', JSON.stringify(routes));
+            localStorage.setItem('bus_current_route', currentRouteIndex);
+
+            alert(`✅ 匯入成功！目前共有 ${routes.length} 條路線。`);
+            renderRouteList();
+        } catch (err) {
+            alert('❌ 檔案格式錯誤，無法解析，請確認上傳的是正確的 JSON 匯出檔。');
+            console.error('匯入失敗', err);
+        } finally {
+            // 清空 input，這樣同一個檔案可以再選一次也會觸發 onchange
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
         function addBroadcast() {
             const val = document.getElementById('broadcastInput').value.trim();
             if(!val) return;
