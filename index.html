@@ -454,7 +454,8 @@ let resetToStationMessage = null; // 由 runQueueLoop 提供，讓離站時能�
         const DEPART_MARGIN = 15;             // 公尺，比最短距離拉開這麼多，視為已經離站（抓 GPS 誤差用）
 
         // ---- 語音播報中斷控制 ----
-        let speechAborted = false;
+let speechAborted = false;
+let speechSession = 0; // 每次呼叫 speakSequence 都會產生新的場次編號，避免舊的播報殘留插話
         
         document.getElementById('speechRate').value = voiceSettings.rate;
 document.getElementById('speedVal').innerText = sliderPercent(document.getElementById('speechRate')) + '%';
