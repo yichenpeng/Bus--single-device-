@@ -250,8 +250,8 @@ input[type="range"]::-moz-range-track {
         <button class="btn-primary" onclick="openPage('select-route-page'); renderRouteList();" style="margin-bottom: 15px;">📁 選擇 / 編輯 / 刪除現有路線</button>
         <button class="btn-primary" onclick="openPage('create-route-page'); initRouteEditor();" style="background: #007bff;">➕ 建立新路線</button>
 
-        <button class="btn-primary" onclick="openExportModal()" style="background: #6c757d; margin-top: 15px;">⬇️ 匯出路線</button>
-        <button class="btn-primary" onclick="document.getElementById('importFileInput').click()" style="background: #6c757d;">⬆️ 匯入路線</button>
+        <button class="btn-primary" onclick="openExportModal()" style="background: #6c757d; margin-top: 15px;">📤 匯出路線</button>
+        <button class="btn-primary" onclick="document.getElementById('importFileInput').click()" style="background: #6c757d;">📥 匯入路線</button>
         <input type="file" id="importFileInput" accept="application/json,.json" style="display:none" onchange="handleImportFile(event)">
     </div>
 
