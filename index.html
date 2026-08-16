@@ -901,37 +901,40 @@ utterance.volume = voiceSettings.volume; // 新增
         // ---- 雙語分段語音播報（用於「下一站」「即將到站」）----
         // segments: [{ text, lang, pause }]，逐段播放，段落間用 pause(ms) 製造停頓
         function speakSequence(segments) {
-            if (!('speechSynthesis' in window)) return;
-            speechAborted = false;
-            window.speechSynthesis.cancel(); // 避免疊在還沒講完的前一段播報上
+    if (!('speechSynthesis' in window)) return;
+    speechAborted = false;
+    window.speechSynthesis.cancel(); // 避免疊在還沒講完的前一段播報上
 
-            let i = 0;
-            function next() {
-                if (speechAborted || i >= segments.length) return;
-                const seg = segments[i];
-                i++;
+    speechSession++;                 // 這是新的一場播報，發一個新編號
+    const mySession = speechSession; // 記住屬於這次呼叫自己的編號
 
-                // 中文段落把數字拆成逐字念；英文段落維持原樣（英文唸數字本來就是逐位念，不受影響）
-                const spokenText = seg.lang && seg.lang.startsWith('zh')
-                    ? digitsToChineseDigits(seg.text)
-                    : seg.text;
+    let i = 0;
+    function next() {
+        // 只要場次編號對不上（代表中途有新的一次播報蓋過來了），就不再繼續念下去
+        if (speechAborted || mySession !== speechSession || i >= segments.length) return;
+        const seg = segments[i];
+        i++;
 
-                const utter = new SpeechSynthesisUtterance(spokenText);
-                utter.lang = seg.lang;
-                utter.rate = voiceSettings.rate;
-                utter.pitch = voiceSettings.pitch;
+        const spokenText = seg.lang && seg.lang.startsWith('zh')
+            ? digitsToChineseDigits(seg.text)
+            : seg.text;
 
-                utter.onend = () => {
-                    if (speechAborted) return;
-                    setTimeout(next, seg.pause !== undefined ? seg.pause : 300);
-                };
-                utter.onerror = () => {
-                    if (speechAborted) return;
-                    setTimeout(next, 50);
-                };
-                window.speechSynthesis.speak(utter);
-            }
-            next();
+        const utter = new SpeechSynthesisUtterance(spokenText);
+        utter.lang = seg.lang;
+        utter.rate = voiceSettings.rate;
+        utter.pitch = voiceSettings.pitch;
+
+        utter.onend = () => {
+            if (speechAborted || mySession !== speechSession) return;
+            setTimeout(next, seg.pause !== undefined ? seg.pause : 300);
+        };
+        utter.onerror = () => {
+            if (speechAborted || mySession !== speechSession) return;
+            setTimeout(next, 50);
+        };
+        window.speechSynthesis.speak(utter);
+    }
+    next();
         }
 
         // 「下一站，XX站，next stop，XX Station」／終點站版本
